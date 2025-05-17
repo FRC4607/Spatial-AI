@@ -14,10 +14,10 @@ pip install --upgrade pip
 pip install -r "${workspace}/requirements.txt"
 
 # Install this local package into the venv
-pip install --editable "${workspace}."
+pip install -e "${workspace}"
 
-# Install precommit hooks
-pre-commit intall
+# Install precommit
+pip install pre-commit
 
 # Vscode exports
 export PYTHONPATH=$workspace

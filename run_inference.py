@@ -8,9 +8,11 @@ from depthai_sdk.visualize.visualizer import Visualizer
 with OakCamera(usb_speed=dai.UsbSpeed.HIGH) as oak:
     color = oak.create_camera('color')
 
-    # List of models that are supported out-of-the-box by the SDK:
-    # https://docs.luxonis.com/projects/sdk/en/latest/features/ai_models/#sdk-supported-models
-    nn = oak.create_nn('yolov5n_coco_416x416', color, spatial=True)
+    # # List of models that are supported out-of-the-box by the SDK:
+    # # https://docs.luxonis.com/projects/sdk/en/latest/features/ai_models/#sdk-supported-models
+    # nn = oak.create_nn('yolov5n_coco_416x416', color, spatial=True)
+
+    nn = oak.create_nn('./models/yolov8n_2025-05-17_00-11-26.json', color, nn_type='yolo', spatial=True)
 
     nn.config_spatial(
         bb_scale_factor=0.5, # Scaling bounding box before averaging the depth in that ROI

@@ -11,7 +11,7 @@ The following is the hardware used to during development. Similar (more powerful
 - DepthAI and DepthAI SDK
 - pyntcore
 
-
+https://tools.luxonis.com/
 
 
 ### 1. Setting up the Raspberry Pi 4B

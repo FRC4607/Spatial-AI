@@ -1,0 +1,17 @@
+[project]
+name="Spatial-AI"
+version="0.0.0"
+description="OAK-D spatial AI for FRC"
+requires-python = ">=3.11"
+
+[build-system]
+requires=["hatchling"]
+build-backend="hatchling.build"
+
+[tool.black]
+line-length = 120
+
+[tool.pylint.main]
+disable = [
+    "line-too-long",
+]

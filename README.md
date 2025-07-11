@@ -98,6 +98,7 @@ _(Work in progress — to be completed based on deployment process and pipeline)
 ---
 
 ## 📂 Project Structure (WIP)
+```
 spatial-ai/
 ├── models/ # YOLO model blobs
 ├── notebooks/ # Colab training notebooks
@@ -105,3 +106,4 @@ spatial-ai/
 ├── resources/ # Documentation resources
 ├── training_data/ # Labeled and annotated training data
 ├── src/ # Main Python code for inference and comms
+```

@@ -1,8 +1,20 @@
 # 🧠 Spatial-AI
 
-The goal of this project is to develop a process to provide **timely and reliable robot-relative game piece detection** to the robot controller via **WPILib NetworkTables**.
+The goal of this project is to develop a process that provides **timely and reliable robot-relative game piece detection** to the robot controller via **WPILib NetworkTables**.
 
 > Simply put: if the robot stands still for a second, this system will detect game objects ***and where they are*** relative to the robot.
+
+---
+
+## 📚 Table of Contents
+- [🔧 Hardware](#-hardware)
+- [💻 Software](#-software)
+- [🍓 1. Setting Up the Raspberry Pi 4B](#-1-setting-up-the-raspberry-pi-4b)
+- [📸 2. Gathering the Training Images](#-2-gathering-the-training-images)
+- [🧹 3. Preparing the Training Images](#-3-preparing-the-training-images)
+- [🧠 4. Training the YOLO Model](#-4-training-the-yolo-model)
+- [🚀 5. Running the YOLO Model](#-5-running-the-yolo-model)
+- [📂 Project Structure](#-project-structure-wip)
 
 ---
 
@@ -10,8 +22,8 @@ The goal of this project is to develop a process to provide **timely and reliabl
 
 The following hardware was used during development. More powerful variants may also work in deployed systems:
 
-- [OAK-D Lite](https://shop.luxonis.com/products/oak-d-lite-1?variant=42583102456031)
-- [Raspberry Pi 4B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/)
+🔗 [OAK-D Lite](https://shop.luxonis.com/products/oak-d-lite-1?variant=42583102456031) – AI depth camera
+🔗 [Raspberry Pi 4B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) – Onboard inference and communication
 
 ---
 
@@ -20,20 +32,20 @@ The following hardware was used during development. More powerful variants may a
 These are the software tools used in development:
 
 - [Python 3](https://www.python.org/)  
-  Used on the Raspberry Pi for processing OAK-D inference packets and sending them to the robot via NetworkTables.
+  Runs on the Raspberry Pi to process OAK-D inference packets and send data to the robot.
 
 - [pyntcore](https://pypi.org/project/pyntcore/)  
-  Enables NetworkTables client communication on the Raspberry Pi.
+  Enables NetworkTables client communication from the Pi to the robot controller.
 
 - [DepthAI & DepthAI SDK](https://github.com/luxonis/depthai/blob/main/depthai_sdk/README.md)  
-  Provides the API interface to the OAK-D Lite.
+  Provides the API interface to the OAK-D Lite camera.
 
 - [Luxonis YOLO Conversion Tool](https://tools.luxonis.com/)  
-  Converts YOLO models (e.g. from Ultralytics) into `.blob` format for OAK-D Lite inference.
+  Converts YOLO models (e.g. from Ultralytics) into `.blob` format for use with OAK-D.
 
 ---
 
-## 🍓 Setting Up the Raspberry Pi 4B
+## 🍓 1. Setting Up the Raspberry Pi 4B
 
 📝 Build a custom image with the following features:
 
@@ -41,69 +53,97 @@ These are the software tools used in development:
 - SSH enabled
 - Unused services (e.g., Bluetooth) disabled
 - Power-hardened (e.g., read-only filesystem)
-- Preloaded with all necessary software
+- Preloaded with all required software and scripts
 
-📝 Create a document with step-by-step instructions on how this image was created.
+> 📝 A separate step-by-step document should be created to detail the image creation process.
 
-> 🔗 [Official Raspberry Pi Docs](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html)  
-> 🔗 [Embedded Pi Setup Resource](https://github.com/johnwinans/raspberry-pi-install)
-
----
-
-## 📸 1. Gathering the Training Images
-
-During development, training images were sourced from [FRC 118 - Robonauts](https://universe.roboflow.com/robonauts-2025). For competition use, the process will involve:
-
-- Capturing a base set of images from the BRIC
-  - Consider variations: lighting, background, robot pose, object presence
-- Supplementing the base set with curated images from match recordings
-
-🎯 The goal is a focused, high-quality dataset optimized for **our specific detection use case**.  
-> As the saying goes: “Don’t try to boil the ocean.”
+🔗 [Official Raspberry Pi Docs](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html)  
+🔗 [Embedded Pi Setup Resource](https://github.com/johnwinans/raspberry-pi-install)
 
 ---
 
-## 🧹 2. Preparing the Training Images
+## 📸 2. Gathering the Training Images
 
-The image prep process includes:
+During development, training images were sourced from [FRC 118 - Robonauts](https://universe.roboflow.com/robonauts-2025). For competition use, follow this data-gathering strategy:
 
-1. **Annotation**: Draw bounding boxes and label objects
-2. **Formatting**: Organize the data into YOLO-compatible structure
+- Capture a base dataset using the BRIC field environment  
+  (Vary lighting, background, robot pose, and object presence)
+- Supplement the dataset with curated match footage screenshots
 
-📝 Create a **2026 - Rebuilt Data Collection and Annotation** document to define this team-wide process.
+🎯 **Goal**: Build a focused, high-quality dataset optimized for our detection task.  
+> "Don't try to boil the ocean."
+
+---
+
+## 🧹 3. Preparing the Training Images
+
+The image preparation process includes:
+
+1. **Annotation** – Draw bounding boxes and label object types  
+2. **Formatting** – Organize files into a YOLO-compatible directory structure
+
+📝 A dedicated document (`2026 - Rebuilt Data Collection and Annotation`) should define the team-wide standard for this process.
 
 🔗 [Ultralytics Data Collection & Annotation Guide](https://docs.ultralytics.com/guides/data-collection-and-annotation/#introduction)
 
 ---
 
-## 🧠 3. Training the YOLO Model
+## 🧠 4. Training the YOLO Model
 
-We’ll use [Ultralytics YOLOv5](https://docs.ultralytics.com/yolov5/) as the starting model. The custom dataset will fine-tune this model for our task.
+We use [Ultralytics YOLOv5](https://docs.ultralytics.com/yolov5/) as our base model. The training notebook fine-tunes the model on our custom dataset.
 
-> ⚠️ YOLOv8 is the successor to v5 — we may consider switching based on performance vs. inference speed tradeoffs.
+> ⚠️ Note: [YOLOv8](https://docs.ultralytics.com) is the successor to v5 and may be adopted if performance and speed tradeoffs are favorable.
 
-### Using Google Colab
+Training is performed using **Google Colab** and stores artifacts in Google Drive. The GitHub auto-commit feature requires a valid GitHub token in the Colab environment.
 
-[Google Colab](https://colab.research.google.com/) provides a Jupyter Notebook environment with CPU/GPU access to train the model.
-
-![Figure 1](resources/figure1.png)  
-*Figure 1: Opening a GitHub Jupyter Notebook using Google Colab*
+**Setup requirements**:
+- A folder named `Google Colab` at the root of your Google Drive
+- A `github_token.txt` file placed inside that folder
 
 ---
 
-## 🚀 4. Running the YOLO Model
+### Using Google Colab
 
-_(Work in progress — to be completed based on deployment process and pipeline)_
+[Google Colab](https://colab.research.google.com/) provides a Jupyter Notebook environment with access to GPUs for faster training. CPU-only training is extremely slow and is **not supported**.
+
+#### ✅ Steps:
+1. Open the training notebook from GitHub using **"Open in Colab"**  
+   ![Figure 1](resources/figure1.png)  
+   *Figure 1: Opening a GitHub notebook in Google Colab*
+
+2. Enable GPU runtime  
+   Go to `Runtime` → `Change runtime type` → Select **GPU**  
+   ![Figure 2](resources/figure2.png)  
+   *Figure 2: Setting GPU runtime in Google Colab*
+
+3. Run the training script and **actively monitor the progress**.  
+   If the window becomes inactive or your machine goes to sleep, Colab may disconnect. If this happens, resume training by setting the global variable:
+   ```python
+   RESUME = True
+   ```
+
+   ![Figure 3](resources/figure3.png)  
+   *Figure 3: YOLO training progress output in Colab*
+
+4. Once complete, the notebook converts the PyTorch weights to OpenVINO format and saves both versions to the `models/` directory.
+
+---
+
+## 🚀 5. Running the YOLO Model
+
+_(Coming soon: real-time inference pipeline using DepthAI SDK and NetworkTables messaging)_
 
 ---
 
 ## 📂 Project Structure (WIP)
+
 ```
 spatial-ai/
-├── models/ # YOLO model blobs
-├── notebooks/ # Colab training notebooks
-├── pi-setup/ # Raspberry Pi images and setup scripts
-├── resources/ # Documentation resources
-├── training_data/ # Labeled and annotated training data
-├── src/ # Main Python code for inference and comms
+├── models/           # YOLO model blobs (PyTorch, OpenVINO)
+├── notebooks/        # Google Colab training notebooks
+├── pi-setup/         # Raspberry Pi setup scripts and image tools
+├── resources/        # Figures and documentation resources
+├── training_data/    # Annotated YOLO training datasets
+├── src/              # Python code for inference and NetworkTables communication
+└── README.md
 ```

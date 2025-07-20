@@ -83,5 +83,5 @@ class OakRecorder():
 
 
 if __name__ == "__main__":
-    recorder = OakRecorder(rec_len_s=5)
+    recorder = OakRecorder(rec_len_s=30)
     recorder.start()

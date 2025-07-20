@@ -73,7 +73,7 @@ class OakRecorder():
             start_time = time.monotonic()
             while oak.running():
                 running_time = time.monotonic() - start_time
-                if running_time % 5 == 0:
+                if round(running_time) % 5 == 0:
                     print(f"  Running time: {running_time}") 
                 if running_time > self.rec_len_s:
                     break

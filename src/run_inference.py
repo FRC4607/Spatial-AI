@@ -45,4 +45,9 @@ with OakCamera(usb_speed=dai.UsbSpeed.HIGH) as oak:
     oak.record([color.out.encoded], '/media/ejmccalla/RECORDINGS/Match_1/', RecordType.VIDEO)
     #oak.record([color], '/media/ejmccalla/RECORDINGS/Match_1/', RecordType.VIDEO)
     
-    oak.start(blocking=True)
+    oak.start()
+    start_time = time.monotonic()
+    while oak.running():
+        if time.monotonic() - start_time > 5:
+            break
+        oak.poll()

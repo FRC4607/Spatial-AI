@@ -233,5 +233,5 @@ if __name__ == "__main__":
     # Get video information
     print(extractor.get_video_info())
 
-    # Extract all frames
-    extractor.extract_all_frames()
+    # # Extract all frames
+    # extractor.extract_all_frames()

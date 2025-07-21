@@ -125,7 +125,19 @@ Training is performed using **Google Colab** and stores artifacts in Google Driv
    ![Figure 3](resources/figure3.png)  
    *Figure 3: YOLO training progress output in Colab*
 
-4. Once complete, the notebook converts the PyTorch weights to OpenVINO format and saves both versions to the `models/` directory.
+4. Once complete, the notebook will copy the PyTorch weights (a *.pt file) to the `models/` directory.
+
+5. Use the online [Luxonis Model Converter](https://tools.luxonis.com/) to convert the PyTorch weights model to a blob file format suitable for the Oak-D Lite. See Figure 4 below for an example of the model conversion inputs. Refer to the Colab training above to determine the input image size. Click the Submit button to begin the model conversion process.
+
+> ⚠️ Note: Until the DepthAI SDK migrates from v2 to v3, using the [Luxonis HubAI](https://hub.luxonis.com/ai) conversion tool will not work. Ignore the deprecation warning and continue to use the model converter linked above.
+
+![Figure 4](resources/figure4.png)
+*Figure 4: Luxonis YOLO Model Conversion Tool*
+
+6. Once conversino is complete, the tool will prompt to save `results.zip` to your local PC. Save the file to a location on your PC which isn't the Spatial-AI repository. Extract all of zipped files and copy these into the `models/` directory of the Spatial-AI repository. See Figure 5 below for an example of all of the zipped files from the model conversion.
+
+![Figure 5](resources/figure5.png)
+*Figure 5: Converted PyTorch Model Files*
 
 ---
 

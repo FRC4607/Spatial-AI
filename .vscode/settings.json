@@ -1,0 +1,17 @@
+{
+    "python.defaultInterpreterPath": "./venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+    "python.languageServer": "Pylance",
+    "python.analysis.autoSearchPaths": true,
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.extraPaths": [
+        "./venv/Lib/site-packages"
+    ],
+    "python.autoComplete.extraPaths": [
+        "./venv/Lib/site-packages"
+    ],
+    "pylint.args": [
+        "--extension-pkg-whitelist=cv2",
+        "--generated-members=cv2.*"
+    ]
+}

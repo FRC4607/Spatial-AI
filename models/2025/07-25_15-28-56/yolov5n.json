@@ -1,7 +1,7 @@
 {
     "model": {
-        "xml": "yolov5n_2025-07-25_15-28-56.xml",
-        "bin": "yolov5n_2025-07-25_15-28-56.bin"
+        "xml": "yolov5n.xml",
+        "bin": "yolov5n.bin"
     },
     "nn_config": {
         "output_format": "detection",

@@ -1,3 +1,4 @@
+#!/bin/bash
 sudo systemctl disable bluetooth
 sudo systemctl disable hciuart
 sudo systemctl disable triggerhappy

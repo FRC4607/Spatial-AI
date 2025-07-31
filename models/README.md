@@ -1,8 +1,8 @@
 ## Models
 
-This folder contains models built for various FRC games. They are organized by game year and training date. The symbolic link `model` points to the model that will be loaded by the inference engine at runtime. This design allows you to switch models simply by updating the symbolic link, without modifying the runtime logic.
+This folder contains models built for various FRC games. They are organized by game year and training date. The symbolic link `model` points to the model that will be loaded by the inference engine at runtime. This design allows you to switch models simply by updating the symbolic link, without modifying any of the Python scripts.
 
-> **Note:** This assumes the model family (e.g. YOLOv5 vs YOLOv8) has not changed.
+> ⚠️ Note: This assumes the model family (e.g. YOLOv5 vs YOLOv8) has not changed.
 
 ## 📂 Models Structure
 

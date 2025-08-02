@@ -1,8 +1,26 @@
 # 🧠 Spatial-AI
 
-The goal of this project is to develop a process that provides **timely and reliable robot-relative game piece detection** to the robot controller via WPILib NetworkTables.
+The goal of this project is to develop the tools and processes necessary to provide **timely and reliable robot-relative game piece detection** to the robot controller via WPILib NetworkTables.
 
 > Simply put: if the robot stands still for a second, this system will detect game objects ***and where they are*** relative to the robot.
+
+This system supports two primary modes: **Development** and **Competition**.
+
+🔧 Development Mode
+
+- The Raspberry Pi **does not** autorun any scripts.
+- SSH into the Raspberry Pi to run scripts for Raspberry PI setup, model inference, pipeline tuning, etc.
+- Use the `oak_recorder` tool to capture video and save it to an attached USB drive for later playback.
+
+🏁 Competition Mode
+
+- The Raspberry Pi will **automatically** launch the `frc4607-spatial-ai` Python script as a **systemd service** at boot.
+- Each match is **automatically recorded** to the attached USB drive, triggered by start/stop signals received from the robot code.
+
+🐞 Debugging
+
+- Use `oak_replay` on a laptop to play recorded video files.
+- Inference outputs are viewable during replay (note: spatial data is unavailable without the B&W stereo cameras).
 
 ---
 

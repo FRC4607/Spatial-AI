@@ -1,2 +1,3 @@
+av
 depthai-sdk
 pyntcore

@@ -48,7 +48,8 @@ class OakConfig():
             self._cc = self._oak.camera(
                 source='color',
                 resolution='1080p',
-                fps=30
+                fps=30,
+                encode='H265'
             )
             self._cc.config_color_camera(isp_scale=self.RES_MAP[resolution])
 

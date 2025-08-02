@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Installing USB auto-mount + auto-unmount..."
+echo "Installing USB auto-mount + auto-unmount with full write permissions for all users..."
 
 # ========================
 # 1. Create USB mount script
@@ -10,27 +10,31 @@ MOUNT_SCRIPT="/usr/local/bin/usb-mount.sh"
 sudo tee "$MOUNT_SCRIPT" > /dev/null << 'EOF'
 #!/bin/bash
 
-DEVICE=$1
-
-# Wait to settle
+DEVICE="$1"
 sleep 1
 
 FSTYPE=$(blkid -o value -s TYPE "$DEVICE")
 LABEL=$(blkid -o value -s LABEL "$DEVICE")
 
-# Fallback if no label
 [ -z "$LABEL" ] && LABEL=$(basename "$DEVICE")
-
 MOUNT_POINT="/media/$LABEL"
 
 mkdir -p "$MOUNT_POINT"
 
-mount -t "$FSTYPE" -o defaults,noatime "$DEVICE" "$MOUNT_POINT" 2>/dev/null
+# Default mount options to allow global write access
+MOUNT_OPTS="defaults,noatime,umask=000"
 
-if mount | grep -q "$MOUNT_POINT"; then
-    logger "USB $DEVICE mounted at $MOUNT_POINT"
+# Adjust mount options for specific filesystems
+if [[ "$FSTYPE" == "vfat" || "$FSTYPE" == "exfat" || "$FSTYPE" == "ntfs" ]]; then
+    MOUNT_OPTS="defaults,noatime,umask=000,uid=1000,gid=1000"
+fi
+
+/bin/mount -t "$FSTYPE" -o "$MOUNT_OPTS" "$DEVICE" "$MOUNT_POINT" 2>/dev/null
+
+if /bin/mount | /bin/grep -q "$MOUNT_POINT"; then
+    /bin/logger "USB $DEVICE mounted at $MOUNT_POINT with write access for all users"
 else
-    logger "Failed to mount $DEVICE"
+    /bin/logger "Failed to mount $DEVICE"
 fi
 EOF
 
@@ -44,17 +48,15 @@ UNMOUNT_SCRIPT="/usr/local/bin/usb-unmount.sh"
 sudo tee "$UNMOUNT_SCRIPT" > /dev/null << 'EOF'
 #!/bin/bash
 
-DEVICE=$1
-
-# Wait for device removal to fully settle
+DEVICE="$1"
 sleep 1
 
-MOUNTED=$(mount | grep "$DEVICE" | awk '{ print $3 }')
+MOUNTED=$(/bin/mount | /bin/grep "$DEVICE" | awk '{ print $3 }')
 
 if [ -n "$MOUNTED" ]; then
-    umount "$DEVICE"
-    logger "🔌 USB $DEVICE unmounted from $MOUNTED"
-    rmdir "$MOUNTED" 2>/dev/null
+    /bin/umount "$DEVICE"
+    /bin/logger "USB $DEVICE unmounted from $MOUNTED"
+    /bin/rmdir "$MOUNTED" 2>/dev/null
 fi
 EOF
 
@@ -66,8 +68,8 @@ sudo chmod +x "$UNMOUNT_SCRIPT"
 RULE_FILE="/etc/udev/rules.d/99-usb-mount.rules"
 
 sudo tee "$RULE_FILE" > /dev/null <<EOF
-KERNEL=="sd[a-z][0-9]", ACTION=="add", RUN+="$MOUNT_SCRIPT /dev/%k"
-KERNEL=="sd[a-z][0-9]", ACTION=="remove", RUN+="$UNMOUNT_SCRIPT /dev/%k"
+KERNEL=="sd[a-z][0-9]", ACTION=="add", RUN+="/usr/local/bin/usb-mount.sh /dev/%k"
+KERNEL=="sd[a-z][0-9]", ACTION=="remove", RUN+="/usr/local/bin/usb-unmount.sh /dev/%k"
 EOF
 
 # ========================
@@ -82,4 +84,4 @@ sudo udevadm trigger
 # ========================
 sudo mkdir -p /media
 
-echo "Done! Plug in a USB drive to auto-mount under /media/<LABEL>, and it will auto-unmount on removal."
+echo "Done! USB drives will auto-mount with full write access for all users under /media/<LABEL>."

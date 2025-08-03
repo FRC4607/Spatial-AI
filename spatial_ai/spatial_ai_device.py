@@ -1,8 +1,12 @@
 """Spatial AI local device module."""
 import os
+import threading
 import time
 import logging
+from collections import deque
 from pathlib import Path
+from flask import Flask, Response
+import cv2
 import ntcore
 from depthai import UsbSpeed
 from depthai_sdk import OakCamera
@@ -11,6 +15,77 @@ from spatial_ai.oak_config import OakConfig
 from spatial_ai.recorder import Recorder
 
 
+class FPSTracker:
+    """Track FPS."""
+    def __init__(self, max_samples=30):
+        self.timestamps = deque(maxlen=max_samples)
+        self.last_update = time.time()
+        self.frame_count = 0
+
+    def update(self):
+        """Update with new timestamp."""
+        current_time = time.time()
+        self.timestamps.append(current_time)
+        self.last_update = current_time
+        self.frame_count += 1
+
+    def get_fps(self):
+        """Calculate and return the FPS."""
+        if len(self.timestamps) < 2:
+            return 0.0
+        time_diff = self.timestamps[-1] - self.timestamps[0]
+        return (len(self.timestamps) - 1) / time_diff if time_diff > 0 else 0.0
+
+# Global frame storage
+CURRENT_FRAME = None
+FRAME_LOCK = threading.Lock()
+
+# Flask app
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    """Index."""
+    return '''
+    <html>
+        <body style="text-align:center; font-family:Arial;">
+            <h1>OAK Camera Stream</h1>
+            <img src="/video" style="max-width:90%; height:auto;">
+            <p>Press F11 for fullscreen</p>
+        </body>
+    </html>
+    '''
+
+@app.route('/video')
+def video():
+    """Video."""
+    def generate():
+        while True:
+            with FRAME_LOCK:
+                frame = CURRENT_FRAME
+            if frame is not None:
+                ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+                if ret:
+                    yield (b'--frame\r\n'
+                           b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+            time.sleep(0.03)  # ~30 FPS
+    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+def start_streaming(port=5000):
+    """Start the HTTP server in background thread."""
+    def run_server():
+        app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
+    thread = threading.Thread(target=run_server, daemon=True)
+    thread.start()
+    print(f"Stream: http://localhost:{port}")
+    time.sleep(1)  # Let server start
+
+def update_stream(frame):
+    """Update the current frame for streaming."""
+    global CURRENT_FRAME
+    with FRAME_LOCK:
+        CURRENT_FRAME = frame.copy() if frame is not None else None
+
 class SpatialAiDevice():
     """
     A spatial AI local device.
@@ -18,6 +93,9 @@ class SpatialAiDevice():
     def __init__(self, log: logging.Logger):
         # Logging
         self._logger = log
+
+        # Tracking FPS
+        self._fps_tracker = FPSTracker()
 
         # Get the mode and host from the local device environment
         self._mode = os.getenv("SPATIAL_AI_MODE", "dev")
@@ -47,6 +125,8 @@ class SpatialAiDevice():
                 team=4607,
                 port=ntcore.NetworkTableInstance.kDefaultPort4
             )
+            self._fps_pub = self._spatial_ai_tbl.getDoubleTopic("FPS").publish()
+            self._fps_pub.setDefault(0.0)
             self._detection_pub = self._spatial_ai_tbl.getBooleanTopic("detection").publish()
             self._detection_pub.setDefault(False)
             self._label_pub = self._spatial_ai_tbl.getStringTopic("label").publish()
@@ -80,6 +160,28 @@ class SpatialAiDevice():
             self._detection_pub.set(False)
             return
 
+        # cv_frame = packet.frame.getCvFrame()
+        # # Draw detection boxes
+        # for detection in packet.detections:
+        #     bbox = detection.bbox
+        #     x1 = int(bbox.xmin * cv_frame.shape[1])
+        #     y1 = int(bbox.ymin * cv_frame.shape[0])
+        #     x2 = int(bbox.xmax * cv_frame.shape[1])
+        #     y2 = int(bbox.ymax * cv_frame.shape[0])
+        #     # Green box
+        #     cv2.rectangle(cv_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        #     # Label
+        #     label = f"{detection.label}: {detection.confidence:.2f}"
+        #     cv2.putText(cv_frame, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+        # Send to stream
+        update_stream(packet.frame)
+
+        # Publish the FPS
+        self._fps_tracker.update()
+        if self._fps_tracker.frame_count % 15 == 0:
+            self._fps_pub.set(self._fps_tracker.get_fps())
+
+        # Publish the first detection
         for det in packet.img_detections.detections:  # type: ignore
             label_str = self._labels[det.label]
             coords = det.spatialCoordinates  # type: ignore
@@ -91,7 +193,7 @@ class SpatialAiDevice():
             self._spatial_z_pub.set(coords.z)
 
             self._logger.info("Detected %s at (%.2f, %.2f, %.2f)", label_str, coords.x, coords.y, coords.z)
-            break  # Only handle the first detection for now
+            break
 
     def update(self):
         """
@@ -109,6 +211,7 @@ if __name__ == "__main__":
 
     # Run the service in development mode
     if spatial_ai_device.is_in_dev_mode():
+        start_streaming(port=5000)
         logger.info("Dev Mode: start listening for host instructions")
         while True:
             spatial_ai_device.update()

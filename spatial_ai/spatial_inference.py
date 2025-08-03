@@ -28,6 +28,7 @@ class SpatialInference():
             # Configure the OAK (color camera and NN)
             self._oak_config = OakConfig(oak=oak)
             self._oak_config.color_camera(resolution=resolution)
+            self._oak_config.stereo_cameras()
             self._oak_config.inference(model_path=model_path)
 
             # def cb(packet: DetectionPacket):

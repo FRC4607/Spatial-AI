@@ -38,6 +38,7 @@ class Recorder():
             # Configure the OAK (color camera and recording)
             self._oak_config = OakConfig(oak=oak)
             self._oak_config.color_camera(resolution=resolution)
+            self._oak_config.stereo_cameras()
             self._oak_config.recording(save_path=save_path)
 
             # Startup the pipeline and record until time expires

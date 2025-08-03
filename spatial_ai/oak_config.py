@@ -32,6 +32,8 @@ class OakConfig():
 
         # Placeholders for lazy object creation
         self._cc: components.camera_component.CameraComponent = None # type: ignore
+        self._left: components.camera_component.CameraComponent = None # type: ignore
+        self._right: components.camera_component.CameraComponent = None # type: ignore
         self._nn: components.nn_component.NNComponent = None # type: ignore
 
     def color_camera(self, resolution: str):
@@ -54,6 +56,28 @@ class OakConfig():
             )
             self._cc.config_color_camera(isp_scale=self.RES_MAP[resolution])
 
+    def stereo_cameras(self):
+        """
+        Configure the OAK stereo cameras.
+        """
+        if self._left:
+            warnings.warn("Oak left camera already configured")
+        if self._right:
+            warnings.warn("Oak right camera already configured")
+        else:
+            self._left = self._oak.create_camera(
+                source='left',
+                resolution='800p',
+                fps=30,
+                encode='H265'
+            )
+            self._right = self._oak.create_camera(
+                source='left',
+                resolution='800p',
+                fps=30,
+                encode='H265'
+            )
+
     def recording(self, save_path: str):
         """
         Configure the OAK recording.
@@ -64,8 +88,11 @@ class OakConfig():
         if not self._cc:
             warnings.warn("Oak color camera not configured, configuring now")
             self.color_camera(resolution="med")
+        if not self._left or not self._right:
+            warnings.warn("Oak left/right cameras not configured, configuring now")
+            self.stereo_cameras()
         self._oak.record(
-            outputs=[self._cc.out.encoded],
+            outputs=[self._cc.out.encoded, self._left.out.encoded, self._right.out.encoded],
             path=save_path,
             record_type=RecordType.VIDEO
         )
@@ -85,11 +112,14 @@ class OakConfig():
             if not self._cc:
                 warnings.warn("Oak color camera not configured, configuring now")
                 self.color_camera(resolution="med")
+            if not self._left or not self._right:
+                warnings.warn("Oak left/right cameras not configured, configuring now")
+                self.stereo_cameras()
             self._nn = self._oak.create_nn(
                 model=model_path,
                 input=self._cc,
                 nn_type='yolo',
-                spatial=True
+                spatial=self._oak.stereo(left=self._left, right=self._right)
             )
             calc_algo = SpatialLocationCalculatorAlgorithm.AVERAGE
             self._nn.config_spatial(

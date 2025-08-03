@@ -136,6 +136,7 @@ if __name__ == "__main__":
             logger.info("Configuring OAK:")
             oak_config = OakConfig(oak=oak)
             oak_config.color_camera(resolution="med")
+            oak_config.stereo_cameras()
             logger.info("  Resolution: %s", "med")
             spatial_ai_device.set_labels(
                 labels=oak_config.inference(model_path="./models/2025/07-25_15-28-56/yolov5n.json")

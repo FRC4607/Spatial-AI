@@ -7,6 +7,8 @@ fi
 
 ./install_git_and_clone_repo.sh "$1" "$2" "$3"      # Install git and clone Spatial-AI
 ./install_required_packages.sh                      # Install required packages
-./automount_usb_recordings.sh                       # Setup USB flash drive
+./install_automount_usb_recordings.sh               # Setup USB flash drive
 ./install_movidius_udev_rules.sh                    # Setup OAK-D camera UDEV rules
+# ./install_env_variables.sh
+# ./install_frc4607_spatial_ai_service.sh
 # ./disable_services.sh

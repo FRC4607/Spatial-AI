@@ -1,6 +1,7 @@
 """Common OAK configuration."""
 import warnings
-from depthai_sdk import OakCamera, RecordType, components
+from typing import Callable
+from depthai_sdk import OakCamera, RecordType, components, classes
 from depthai import SpatialLocationCalculatorAlgorithm
 
 
@@ -69,12 +70,14 @@ class OakConfig():
             record_type=RecordType.VIDEO
         )
 
-    def inference(self, model_path: str):
+    def inference(self, model_path: str) -> list[str]:
         """
         Configure the OAK NN for inference.
 
         Args:
             model_path (str): Path to the inference model
+        Returns:
+            (list[str]): Lables
         """
         if self._nn:
             warnings.warn("Oak NN already configured")
@@ -96,3 +99,16 @@ class OakConfig():
                 calc_algo=calc_algo     # Average depth points before calculating X and Y spatial coordinates
             )
             self._oak.visualize(self._nn, fps=True)
+        return self._nn.get_labels()
+
+    def inference_detections(self, callback: Callable[[classes.DetectionPacket]]):
+        """
+        Configure the OAK NN detections with a callback function.
+
+        Args:
+            callback (func): Callback function for the NN detection packets
+        """
+        if not self._nn:
+            warnings.warn("Oak NN not configured")
+        else:
+            self._oak.callback(self._nn, callback=callback)

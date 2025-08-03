@@ -2,7 +2,7 @@
 import argparse
 from depthai import UsbSpeed
 from depthai_sdk import OakCamera
-from .oak_config import OakConfig
+from spatial_ai.oak_config import OakConfig
 
 
 class SpatialInference():

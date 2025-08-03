@@ -1,7 +1,7 @@
 """Module for replaying OAK video and running inference."""
 import argparse
 from depthai_sdk import OakCamera
-from .oak_config import OakConfig
+from spatial_ai.oak_config import OakConfig
 
 
 class Replay():

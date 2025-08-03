@@ -3,7 +3,7 @@ import argparse
 import time
 import depthai as dai
 from depthai_sdk import OakCamera
-from .oak_config import OakConfig
+from spatial_ai.oak_config import OakConfig
 
 
 class Recorder():

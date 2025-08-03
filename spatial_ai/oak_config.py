@@ -34,6 +34,7 @@ class OakConfig():
         self._cc: components.camera_component.CameraComponent = None # type: ignore
         self._left: components.camera_component.CameraComponent = None # type: ignore
         self._right: components.camera_component.CameraComponent = None # type: ignore
+        self._stereo: components.stereo_component.StereoComponent = None # type: ignore
         self._nn: components.nn_component.NNComponent = None # type: ignore
 
     def color_camera(self, resolution: str):
@@ -41,7 +42,7 @@ class OakConfig():
         Configure the OAK color camera.
 
         Args:
-            resolution (str): Camera resolution
+            resolution (str): Color camera resolution
         """
         if resolution not in self.RES_MAP:
             raise ValueError(f"Unknownn resolution {resolution}")
@@ -77,6 +78,9 @@ class OakConfig():
                 fps=30,
                 encode='H265'
             )
+            self._stereo = self._oak.stereo(left=self._left, right=self._right)
+            self._stereo.node.setOutputSize(1280, 720)
+            self._stereo.node.setDefaultProfilePreset(self._stereo.node.PresetMode.ROBOTICS)
 
     def recording(self, save_path: str):
         """
@@ -113,21 +117,25 @@ class OakConfig():
                 warnings.warn("Oak color camera not configured, configuring now")
                 self.color_camera(resolution="med")
             if not self._left or not self._right:
-                warnings.warn("Oak left/right cameras not configured, configuring now")
-                self.stereo_cameras()
-            self._nn = self._oak.create_nn(
-                model=model_path,
-                input=self._cc,
-                nn_type='yolo',
-                spatial=self._oak.stereo(left=self._left, right=self._right)
-            )
-            calc_algo = SpatialLocationCalculatorAlgorithm.AVERAGE
-            self._nn.config_spatial(
-                bb_scale_factor=0.5,    # Scaling bounding box before averaging the depth in that ROI
-                lower_threshold=300,    # Discard depth points below 30cm
-                upper_threshold=10000,  # Discard depth pints above 10m
-                calc_algo=calc_algo     # Average depth points before calculating X and Y spatial coordinates
-            )
+                self._nn = self._oak.create_nn(
+                    model=model_path,
+                    input=self._cc,
+                    nn_type='yolo',
+                )
+            else:
+                self._nn = self._oak.create_nn(
+                    model=model_path,
+                    input=self._cc,
+                    nn_type='yolo',
+                    spatial=self._stereo
+                )
+                calc_algo = SpatialLocationCalculatorAlgorithm.AVERAGE
+                self._nn.config_spatial(
+                    bb_scale_factor=0.5,    # Scaling bounding box before averaging the depth in that ROI
+                    lower_threshold=300,    # Discard depth points below 30cm
+                    upper_threshold=10000,  # Discard depth pints above 10m
+                    calc_algo=calc_algo     # Average depth points before calculating X and Y spatial coordinates
+                )
             self._oak.visualize(self._nn, fps=True)
         return self._nn.get_labels()
 

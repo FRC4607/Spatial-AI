@@ -27,7 +27,8 @@ class Replay():
             # Configure the OAK (color camera and NN)
             self._oak_config = OakConfig(oak=oak)
             self._oak_config.color_camera(resolution=resolution)
-            self._oak_config.stereo_cameras()
+            if video_path.split(".")[-1] != "mp4":
+                self._oak_config.stereo_cameras()
             self._oak_config.inference(model_path=model_path)
 
             # Start the replay and wait for it to finish

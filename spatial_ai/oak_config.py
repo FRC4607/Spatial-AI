@@ -101,7 +101,7 @@ class OakConfig():
             self._oak.visualize(self._nn, fps=True)
         return self._nn.get_labels()
 
-    def inference_detections(self, callback: Callable[[classes.DetectionPacket]]):
+    def inference_detections(self, callback: Callable[[classes.DetectionPacket], None]):
         """
         Configure the OAK NN detections with a callback function.
 

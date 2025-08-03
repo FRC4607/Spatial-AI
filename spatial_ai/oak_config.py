@@ -65,14 +65,14 @@ class OakConfig():
         if self._right:
             warnings.warn("Oak right camera already configured")
         else:
-            self._left = self._oak.create_camera(
+            self._left = self._oak.camera(
                 source='left',
                 resolution='800p',
                 fps=30,
                 encode='H265'
             )
-            self._right = self._oak.create_camera(
-                source='left',
+            self._right = self._oak.camera(
+                source='right',
                 resolution='800p',
                 fps=30,
                 encode='H265'

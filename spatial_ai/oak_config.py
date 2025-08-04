@@ -136,10 +136,9 @@ class OakConfig():
                     upper_threshold=10000,  # Discard depth pints above 10m
                     calc_algo=calc_algo     # Average depth points before calculating X and Y spatial coordinates
                 )
-            self._oak.visualize(self._nn, fps=True)
         return self._nn.get_labels()
 
-    def inference_detections(self, callback: Callable[[classes.DetectionPacket], None]):
+    def detections_callback(self, callback: Callable[[classes.DetectionPacket], None]):
         """
         Configure the OAK NN detections with a callback function.
 
@@ -150,3 +149,12 @@ class OakConfig():
             warnings.warn("Oak NN not configured")
         else:
             self._oak.callback(self._nn, callback=callback)
+
+    def visualize(self):
+        """
+        Configure the OAK visualizer.
+        """
+        if not self._nn:
+            warnings.warn("Oak NN not configured")
+        else:
+            self._oak.visualize(self._nn, fps=True)

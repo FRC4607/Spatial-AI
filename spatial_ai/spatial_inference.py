@@ -30,21 +30,7 @@ class SpatialInference():
             self._oak_config.color_camera(resolution=resolution)
             self._oak_config.stereo_cameras()
             self._oak_config.inference(model_path=model_path)
-
-            # def cb(packet: DetectionPacket):
-            #     for det in packet.img_detections.detections:
-            #         print("==========================================================")
-            #         print(
-            #             f"label={det.label}, "
-            #             f"x={det.spatialCoordinates.x}, "
-            #             f"y={det.spatialCoordinates.y}, "
-            #             f"z={det.spatialCoordinates.z}"
-            #             )
-            # def cb(packet: DetectionPacket):
-            #     frame = packet.frame
-            #     # visualizer = packet.visualizer
-            #     # frame = visualizer.draw(packet.frame)
-            #     cv2.imshow('Visualizer', frame)
+            self._oak_config.visualize()
 
             # vis = oak.visualize(nn.out.passthrough, fps=True)
             # vis.detections().text(auto_scale=True, font_scale=0.5, font_thickness=1)

@@ -4,63 +4,13 @@ import time
 import logging
 from collections import deque
 import ntcore
+import cv2
 from depthai import UsbSpeed
 from depthai_sdk import OakCamera
 from depthai_sdk.classes import DetectionPacket
 from spatial_ai.oak_config import OakConfig
 from spatial_ai.recorder import Recorder
-import time
-import threading
-import cv2
-from flask import Flask, Response
-
-
-current_frame = None  # pylint: disable=C0103
-frame_lock = threading.Lock()
-app = Flask(__name__)
-
-@app.route('/')
-def index():
-    """Flask index decorator."""
-    return '''
-    <html>
-        <body style="text-align:center; font-family:Arial;">
-            <h1>OAK Camera Stream</h1>
-            <img src="/video" style="max-width:90%; height:auto;">
-            <p>Press F11 for fullscreen</p>
-        </body>
-    </html>
-    '''
-
-@app.route('/video')
-def video():
-    """Flask video decorator."""
-    def generate():
-        while True:
-            with frame_lock:
-                frame = current_frame
-            if frame is not None:
-                ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
-                if ret:
-                    yield (b'--frame\r\n'
-                           b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
-            time.sleep(0.03)  # ~30 FPS
-    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-def start_streaming(port=5000):
-    """Start the HTTP server in background thread."""
-    def run_server():
-        app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
-    thread = threading.Thread(target=run_server, daemon=True)
-    thread.start()
-    print(f"Stream: http://localhost:{port}")
-    time.sleep(1)  # Let server start
-
-def update_stream(frame):
-    """Update the current frame for streaming."""
-    global current_frame  # pylint: disable=W0603
-    with frame_lock:
-        current_frame = frame.copy() if frame is not None else None
+from spatial_ai import streamer
 
 
 class FPSTracker:
@@ -172,37 +122,43 @@ class SpatialAiDevice():
         if not self.labels:
             self._logger.warning("Labels not set. Skipping detection callback.")
             return
-        if not packet.img_detections.detections: # type: ignore
-            self._detection_pub.set(False)
+        if packet.frame is None:
+            self._logger.warning("Packet frame is None")
             return
 
-        frame = packet.frame
-        for det in packet.img_detections.detections:  # type: ignore
-            x1 = int(det.xmin * 768)
-            y1 = int(det.ymin * 432)
-            x2 = int(det.xmax * 768)
-            y2 = int(det.ymax * 432)
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            label = f"{self.labels[det.label]}: {det.confidence:.2f}"
-            cv2.putText(frame, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-        update_stream(frame)
+        frame = packet.frame.copy()
 
-        # Publish the FPS
-        self._fps_tracker.update()
-        if self._fps_tracker.frame_count % 15 == 0:
-            self._fps_pub.set(self._fps_tracker.get_fps())
+        # No detections to process
+        if not packet.img_detections.detections: # type: ignore
+            self._detection_pub.set(False)
 
-        # Publish the first detection
-        for det in packet.img_detections.detections:  # type: ignore
-            label_str = self.labels[det.label]
-            coords = det.spatialCoordinates  # type: ignore
-            self._detection_pub.set(True)
-            self._label_pub.set(label_str)
-            self._spatial_x_pub.set(coords.x)
-            self._spatial_y_pub.set(coords.y)
-            self._spatial_z_pub.set(coords.z)
-            self._logger.info("Detected %s at (%.2f, %.2f, %.2f)", label_str, coords.x, coords.y, coords.z)
-            break
+        # Process the first detection
+        else:
+            # Publish the FPS
+            self._fps_tracker.update()
+            if self._fps_tracker.frame_count % 15 == 0:
+                self._fps_pub.set(self._fps_tracker.get_fps())
+
+            # Publish the spatial detection
+            for det in packet.img_detections.detections:  # type: ignore
+                label_str = self.labels[det.label]
+                coords = det.spatialCoordinates  # type: ignore
+                self._detection_pub.set(True)
+                self._label_pub.set(label_str)
+                self._spatial_x_pub.set(coords.x)
+                self._spatial_y_pub.set(coords.y)
+                self._spatial_z_pub.set(coords.z)
+                self._logger.info("Detected %s at (%.2f, %.2f, %.2f)", label_str, coords.x, coords.y, coords.z)
+                x1 = int(det.xmin * 768)
+                y1 = int(det.ymin * 432)
+                x2 = int(det.xmax * 768)
+                y2 = int(det.ymax * 432)
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                label = f"{self.labels[det.label]}: {det.confidence:.2f}"
+                cv2.putText(frame, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                cv2.putText(frame, f"FPS {self._fps_tracker.get_fps()}", (0, 0), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                break
+            streamer.update_stream(frame)
 
 
 if __name__ == "__main__":
@@ -240,7 +196,7 @@ if __name__ == "__main__":
 
             # Run spatial inference
             elif spatial_ai_device.command == "inference":
-                start_streaming(port=5000)
+                streamer.start_streaming(port=5000)
                 with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
                     logger.info("Configuring OAK device for spatial inference")
                     oak_config = OakConfig(oak=oak)

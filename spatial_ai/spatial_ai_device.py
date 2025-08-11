@@ -113,19 +113,12 @@ class SpatialAiDevice():
         """Return true if in development mode."""
         return self._mode == "dev"
 
-    def set_labels(self, labels: list[str]):
-        """Set the labels of the NN model."""
-        self.labels = labels
-
     def nn_detection_callback(self, packet: DetectionPacket):
         """Process callback."""
-        if not self.labels:
-            self._logger.warning("Labels not set. Skipping detection callback.")
-            return
         if packet.frame is None:
             self._logger.warning("Packet frame is None")
             return
-
+        self._fps_tracker.update()
         frame = packet.frame.copy()
 
         # No detections to process
@@ -135,28 +128,28 @@ class SpatialAiDevice():
         # Process the first detection
         else:
             # Publish the FPS
-            self._fps_tracker.update()
             if self._fps_tracker.frame_count % 15 == 0:
                 self._fps_pub.set(self._fps_tracker.get_fps())
+                self._logger.info(f"FPS {self._fps_tracker.get_fps():.1f}")
 
-            # Publish the spatial detection
-            for det in packet.img_detections.detections:  # type: ignore
-                label_str = self.labels[det.label]
-                coords = det.spatialCoordinates  # type: ignore
+            for det in packet.detections:
+                bbox = packet.bbox.get_relative_bbox(det.bbox)
+                coords = det.img_detection.spatialCoordinates  # type: ignore
                 self._detection_pub.set(True)
-                self._label_pub.set(label_str)
+                self._label_pub.set(det.label_str)
                 self._spatial_x_pub.set(coords.x)
                 self._spatial_y_pub.set(coords.y)
                 self._spatial_z_pub.set(coords.z)
-                self._logger.info("Detected %s at (%.2f, %.2f, %.2f)", label_str, coords.x, coords.y, coords.z)
-                x1 = int(det.xmin * 768)
-                y1 = int(det.ymin * 432)
-                x2 = int(det.xmax * 768)
-                y2 = int(det.ymax * 432)
+                self._logger.debug("Detected %s at (%.2f, %.2f, %.2f)", det.label_str, coords.x, coords.y, coords.z)
+                frame_height, frame_width = frame.shape[:2]
+                x1 = int(bbox.xmin * frame_width)
+                y1 = int(bbox.ymin * frame_height)
+                x2 = int(bbox.xmax * frame_width)
+                y2 = int(bbox.ymax * frame_height)
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                label = f"{self.labels[det.label]}: {det.confidence:.2f}"
+                label = f"{det.label_str}: {det.confidence:.2f}"
                 cv2.putText(frame, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                cv2.putText(frame, f"FPS {self._fps_tracker.get_fps()}", (0, 0), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                cv2.putText(frame, f"FPS {self._fps_tracker.get_fps():.1f}", (5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                 break
             streamer.update_stream(frame)
 
@@ -172,9 +165,7 @@ if __name__ == "__main__":
             logger.info("Configuring OAK device for spatial inference")
             oak_config = OakConfig(oak=oak)
             oak_config.color_camera(resolution="med")
-            oak_config.stereo_cameras()
-            label_list = oak_config.inference(model_path="./models/2025/07-25_15-28-56/yolov5n.json")
-            spatial_ai_device.set_labels(labels=label_list)
+            oak_config.inference(model_path="./models/2025/07-25_15-28-56/yolov5n.json")
             oak_config.detections_callback(callback=spatial_ai_device.nn_detection_callback)
             logger.info("Comp Mode: start publishing detctions")
             oak.start(blocking=True)
@@ -201,9 +192,7 @@ if __name__ == "__main__":
                     logger.info("Configuring OAK device for spatial inference")
                     oak_config = OakConfig(oak=oak)
                     oak_config.color_camera(resolution="med")
-                    oak_config.stereo_cameras()
-                    label_list = oak_config.inference(model_path=spatial_ai_device.inference_model_path)
-                    spatial_ai_device.set_labels(labels=label_list)
+                    oak_config.inference(model_path=spatial_ai_device.inference_model_path)
                     oak_config.detections_callback(callback=spatial_ai_device.nn_detection_callback)
 
                     oak.start()

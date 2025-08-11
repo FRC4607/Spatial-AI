@@ -32,9 +32,6 @@ class OakConfig():
 
         # Placeholders for lazy object creation
         self._cc: components.camera_component.CameraComponent = None # type: ignore
-        self._left: components.camera_component.CameraComponent = None # type: ignore
-        self._right: components.camera_component.CameraComponent = None # type: ignore
-        self._stereo: components.stereo_component.StereoComponent = None # type: ignore
         self._nn: components.nn_component.NNComponent = None # type: ignore
 
     def color_camera(self, resolution: str):
@@ -57,31 +54,6 @@ class OakConfig():
             )
             self._cc.config_color_camera(isp_scale=self.RES_MAP[resolution])
 
-    def stereo_cameras(self):
-        """
-        Configure the OAK stereo cameras.
-        """
-        if self._left:
-            warnings.warn("Oak left camera already configured")
-        if self._right:
-            warnings.warn("Oak right camera already configured")
-        else:
-            self._left = self._oak.camera(
-                source='left',
-                resolution='800p',
-                fps=30,
-                encode='H265'
-            )
-            self._right = self._oak.camera(
-                source='right',
-                resolution='800p',
-                fps=30,
-                encode='H265'
-            )
-            self._stereo = self._oak.stereo(left=self._left, right=self._right)
-            self._stereo.node.setOutputSize(1280, 720)
-            self._stereo.node.setDefaultProfilePreset(self._stereo.node.PresetMode.ROBOTICS)
-
     def recording(self, save_path: str):
         """
         Configure the OAK recording.
@@ -92,16 +64,14 @@ class OakConfig():
         if not self._cc:
             warnings.warn("Oak color camera not configured, configuring now")
             self.color_camera(resolution="med")
-        if not self._left or not self._right:
-            warnings.warn("Oak left/right cameras not configured, configuring now")
-            self.stereo_cameras()
         self._oak.record(
-            outputs=[self._cc.out.encoded, self._left.out.encoded, self._right.out.encoded],
+            # outputs=[self._cc.out.encoded, self._left.out.encoded, self._right.out.encoded],
+            outputs=[self._cc.out.encoded],
             path=save_path,
             record_type=RecordType.VIDEO
         )
 
-    def inference(self, model_path: str) -> list[str]:
+    def inference(self, model_path: str):
         """
         Configure the OAK NN for inference.
 
@@ -116,27 +86,19 @@ class OakConfig():
             if not self._cc:
                 warnings.warn("Oak color camera not configured, configuring now")
                 self.color_camera(resolution="med")
-            if not self._left or not self._right:
-                self._nn = self._oak.create_nn(
-                    model=model_path,
-                    input=self._cc,
-                    nn_type='yolo',
-                )
-            else:
-                self._nn = self._oak.create_nn(
-                    model=model_path,
-                    input=self._cc,
-                    nn_type='yolo',
-                    spatial=self._stereo
-                )
-                calc_algo = SpatialLocationCalculatorAlgorithm.AVERAGE
-                self._nn.config_spatial(
-                    bb_scale_factor=0.5,    # Scaling bounding box before averaging the depth in that ROI
-                    lower_threshold=300,    # Discard depth points below 30cm
-                    upper_threshold=10000,  # Discard depth pints above 10m
-                    calc_algo=calc_algo     # Average depth points before calculating X and Y spatial coordinates
-                )
-        return self._nn.get_labels()
+            self._nn = self._oak.create_nn(
+                model=model_path,
+                input=self._cc,
+                nn_type='yolo',
+                spatial=True
+            )
+            calc_algo = SpatialLocationCalculatorAlgorithm.AVERAGE
+            self._nn.config_spatial(
+                bb_scale_factor=0.5,    # Scaling bounding box before averaging the depth in that ROI
+                lower_threshold=300,    # Discard depth points below 30cm
+                upper_threshold=10000,  # Discard depth pints above 10m
+                calc_algo=calc_algo     # Average depth points before calculating X and Y spatial coordinates
+            )
 
     def detections_callback(self, callback: Callable[[classes.DetectionPacket], None]):
         """

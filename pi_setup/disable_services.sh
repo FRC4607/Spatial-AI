@@ -11,3 +11,5 @@ sudo systemctl disable keyboard-setup
 sudo systemctl disable alsa-utils
 sudo systemctl disable apt-daily.timer
 sudo systemctl disable apt-daily-upgrade.timer
+
+echo "Done disabling unnecessary services."

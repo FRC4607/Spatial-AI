@@ -15,7 +15,7 @@ This system supports two primary modes: **Development** and **Competition**.
 🏁 Competition Mode
 
 - The Raspberry Pi will **automatically** launch the `frc4607-spatial-ai` Python script as a **systemd service** at boot.
-- Each match is **automatically recorded** to the attached USB drive, triggered by start/stop signals received from the robot code.
+- **Match recording** to the attached USB drive is triggered by start/stop signals received from the robot code.
 
 🐞 Debugging
 
@@ -42,7 +42,7 @@ This system supports two primary modes: **Development** and **Competition**.
 This project uses the following hardware:
 
 🔗 [**OAK-D Lite**](https://shop.luxonis.com/products/oak-d-lite-1?variant=42583102456031)  
-- Stereo + color camera in one compact device  
+- B&W Stereo + color camera in one compact device  
 - Provides both object detection and 3D location (relative to the camera)
 
 🔗 [**Raspberry Pi 4B**](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/)  
@@ -71,21 +71,23 @@ These tools are required:
 
 - Raspberry Pi OS Lite (64-bit, headless)
 - SSH enabled
-- Bluetooth and other unused services disabled
-- Optional: Read-only filesystem for power resilience
-- Preloaded software/scripts
+- Bluetooth, WiFi, and Audio HW disabled
+- Several unused services disabled
+- Preloaded with this projects software/scripts
 
 ### ⚙️ Steps
 
 1. Download and install Raspberry Pi OS Lite using [Raspberry Pi Imager](https://www.raspberrypi.com/documentation/computers/getting-started.html#raspberry-pi-imager)
    - In "Edit Settings":
-     - **Hostname**: `frc4607`
+     - **Hostname**: `frc4607-spatial-ai`
      - **Username**: `frc4607`
      - **Password**: `frc4607`
    - Under "Services":  
      ✅ Enable SSH and password authentication
 
-2. From PowerShell on your PC, run:
+2. Clone this repo to your PC
+
+3. From PowerShell on your PC, run:
 
 ```powershell
 .\setup_pi.ps1 -User "Your Name" -Email "you@example.com" -Repo "https://github.com/FRC4607/Spatial-AI.git"

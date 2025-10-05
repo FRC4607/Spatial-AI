@@ -1,7 +1,6 @@
 #!/bin/bash
 
 echo "Installing USB auto-mount + auto-unmount with full write permissions for all users..."
-
 # ========================
 # 1. Create USB mount script
 # ========================

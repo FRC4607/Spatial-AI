@@ -1,17 +1,8 @@
 #!/bin/bash
 
-# Check for 3 arguments
-if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 \"Your Name\" \"you@example.com\" \"https://github.com/user/repo.git\""
-    exit 1
-fi
-
 GIT_NAME="$1"
 GIT_EMAIL="$2"
 REPO_URL="$3"
-
-echo "Updating package lists..."
-sudo apt update || { echo "Failed to update package lists."; exit 1; }
 
 # Install Git if not already installed
 if ! command -v git &> /dev/null; then

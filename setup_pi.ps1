@@ -37,7 +37,7 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-# === Run the setup.sh script remotely with arguments ===
+# === Run the /pi_setup/setup.sh script remotely with arguments ===
 $RunCommand = "cd $RemotePath && ./setup.sh $GitUser $GitEmail $GitRepo"
 Write-Host "Running remote script: $RunCommand"
 ssh "$PiUser@$PiHost" $RunCommand

@@ -159,19 +159,8 @@ if __name__ == "__main__":
     logger = logging.getLogger("SpatialAiDevice")
     spatial_ai_device = SpatialAiDevice(log=logger)
 
-    # Run the service in competition mode
-    if not spatial_ai_device.is_in_dev_mode():
-        with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
-            logger.info("Configuring OAK device for spatial inference")
-            oak_config = OakConfig(oak=oak)
-            oak_config.color_camera(resolution="med")
-            oak_config.inference(model_path="./models/2025/07-25_15-28-56/yolov5n.json")
-            oak_config.detections_callback(callback=spatial_ai_device.nn_detection_callback)
-            logger.info("Comp Mode: start publishing detctions")
-            oak.start(blocking=True)
-
     # Run the service in development mode
-    else:
+    if spatial_ai_device.is_in_dev_mode():
         while True:
             spatial_ai_device.update()
 
@@ -202,9 +191,20 @@ if __name__ == "__main__":
                         running_time = time.monotonic() - start_time
                         if running_time > last_print_time:
                             last_print_time+=5
-                            print(f"  Running time: {running_time}")
+                            print(f"  Running time: {running_time}:.1f")
                         if running_time > spatial_ai_device.inference_time:
                             break
                         oak.poll()
             else:
                 time.sleep(1)
+
+    # Run the service in competition mode
+    else:
+        with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
+            logger.info("Configuring OAK device for spatial inference")
+            oak_config = OakConfig(oak=oak)
+            oak_config.color_camera(resolution="med")
+            oak_config.inference(model_path="./models/2025/07-25_15-28-56/yolov5n.json")
+            oak_config.detections_callback(callback=spatial_ai_device.nn_detection_callback)
+            logger.info("Comp Mode: start publishing detctions")
+            oak.start(blocking=True)

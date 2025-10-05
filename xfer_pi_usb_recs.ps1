@@ -1,6 +1,6 @@
 param (
-    [string]$PiUser = "ejmccalla",
-    [string]$PiHost = "frc4607"
+    [string]$PiUser = "frc4607",
+    [string]$PiHost = "frc4607-spatial-ai"
 )
 
 $RemoteFile = "/media/RECORDINGS"

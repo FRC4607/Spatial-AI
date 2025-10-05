@@ -8,19 +8,19 @@ This system supports two primary modes: **Development** and **Competition**.
 
 🔧 Development Mode
 
-- The Raspberry Pi **does not** autorun any scripts.
-- SSH into the Raspberry Pi to run scripts for Raspberry PI setup, model inference, pipeline tuning, etc.
-- Use the `oak_recorder` tool to capture video and save it to an attached USB drive for later playback.
+- SSH into the Raspberry Pi (frc4607@frc4607-spatial-ai) and run `spatial-inference` to view the stream at http://localhost:5000/
+- Or run `recorder` to capture video and save it to an attached USB drive for later playback
+- The FRC4607 Spatial AI service (connects to NT4 using host frc4607-spatial-ai) can also be used view spatial inferencing and recording via NT control
 
 🏁 Competition Mode
 
-- The Raspberry Pi will **automatically** launch the `frc4607-spatial-ai` Python script as a **systemd service** at boot.
-- **Match recording** to the attached USB drive is triggered by start/stop signals received from the robot code.
+- The FRC4607 Spatial AI service will connect to NT4 using team number 4607
+- **Inferencing** is started and during bootup 
+- **Recording** to the attached USB drive is triggered by start/stop signals received from the robot code.
 
 🐞 Debugging
 
-- Use `oak_replay` on a laptop to play recorded video files.
-- Inference outputs are viewable during replay (note: spatial data is unavailable without the B&W stereo cameras).
+- Use `replay` on a laptop to play recorded video files and view inferencing results
 
 ---
 
@@ -45,8 +45,8 @@ This project uses the following hardware:
 - B&W Stereo + color camera in one compact device  
 - Provides both object detection and 3D location (relative to the camera)
 
-🔗 [**Raspberry Pi 4B**](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/)  
-- Hosts the OAK-D Lite interface  
+🔗 [**Raspberry Pi 5**](https://www.raspberrypi.com/products/raspberry-pi-5/)  
+- Hosts the OAK-D Lite camera  
 - Runs inference and publishes results to NetworkTables  
 - Captures video streams to a connected USB drive
 
@@ -65,15 +65,15 @@ These tools are required:
 
 ---
 
-## 🍓 1. Setting Up the Raspberry Pi 4B
+## 🍓 1. Setting Up the Raspberry Pi 5
 
-📝 Use a custom Raspberry Pi image with:
+📝 Use a custom Raspberry Pi 5 image with:
 
 - Raspberry Pi OS Lite (64-bit, headless)
 - SSH enabled
 - Bluetooth, WiFi, and Audio HW disabled
 - Several unused services disabled
-- Preloaded with this projects software/scripts
+- This project is cloned and the virtual environment is setup
 
 ### ⚙️ Steps
 
@@ -87,11 +87,15 @@ These tools are required:
 
 2. Clone this repo to your PC
 
-3. From PowerShell on your PC, run:
+3. From a command prompt at the projects root, run `setup.bat` to setup the virtual environment
 
-```powershell
-.\setup_pi.ps1 -User "Your Name" -Email "you@example.com" -Repo "https://github.com/FRC4607/Spatial-AI.git"
-```
+4. From a PowerShell on your PC, run the command below to completely setup the Raspberry PI:
+```.\setup_pi.ps1 -User "you" -Email "you@example.com"```
+
+5. Use the commands below to switch between the FRC4607 Spatial AI service modes:
+```powershell .\set_dev_mode.ps1```
+```powershell .\set_comp_mode.ps1```
+
 
 🔗 [Raspberry Pi Docs](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html)  
 🔗 [Embedded Pi Setup Resource](https://github.com/johnwinans/raspberry-pi-install)

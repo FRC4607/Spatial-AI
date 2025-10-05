@@ -31,4 +31,10 @@ else
     git clone "$REPO_URL" || { echo "Failed to clone repo."; exit 1; }
 fi
 
+# Run setup.sh to setup the virtual environment on the pi
+echo "Running setup.bash..."
+cd "$REPO_DIR"
+chmod +x setup.sh
+./setup.sh
+
 echo "Done installing Git and cloning repo."

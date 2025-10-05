@@ -23,16 +23,17 @@ class Replay():
             resolution (str): Camera resolution
         """
         with OakCamera(replay=video_path) as oak:
+            oak_config = OakConfig(oak=oak)
+            oak_config.color_camera(resolution=resolution)
+            oak_config.inference(model_path=model_path)
+            oak_config.visualize()
 
-            # Configure the OAK (color camera and NN)
-            self._oak_config = OakConfig(oak=oak)
-            self._oak_config.color_camera(resolution=resolution)
-            if video_path.split(".")[-1] != "mp4":
-                self._oak_config.stereo_cameras()
-            self._oak_config.inference(model_path=model_path)
-
-            # Start the replay and wait for it to finish
+            # Startup the pipeline and record until time expires
+            print("------------------------------------------------")
+            print("  Starting the OAK pipeline (press q to quit)....")
             oak.start(blocking=True)
+            print("  Stopping the OAK pipline...")
+            print("------------------------------------------------")
 
 
 def main():

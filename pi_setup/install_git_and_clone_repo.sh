@@ -20,7 +20,7 @@ echo "Git config set:"
 git config --global --list
 
 # Clone the repository
-TARGET_PARENT="/home/${GIT_NAME}"
+TARGET_PARENT="/home/frc4607"
 mkdir -p "$TARGET_PARENT"
 cd "$TARGET_PARENT"
 REPO_DIR=$(basename "${REPO_URL%%.git*}")

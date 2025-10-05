@@ -4,6 +4,13 @@ set -e
 set -u
 set -o pipefail
 
+# Check if running as root, if not, re-run with sudo
+if [ "$EUID" -ne 0 ]; then 
+    echo "Re-running with sudo..."
+    sudo "$0" "$@"
+    exit $?
+fi
+
 echo "========================================="
 echo "Setting up Raspberry Pi OS in Read-Only Mode"
 echo "========================================="
@@ -37,8 +44,11 @@ echo "tmpfs /var/tmp tmpfs nodev,nosuid,size=30M 0 0" >> /etc/fstab
 echo "tmpfs /tmp tmpfs nodev,nosuid,size=50M 0 0" >> /etc/fstab
 
 echo "Step 4: Configuring systemd for read-only root..."
-# Create directory for random seed
-mkdir -p /var/lib/systemd/random-seed
+# Create directory for random seed (if it doesn't exist)
+mkdir -p /var/lib/systemd 2>/dev/null || true
+
+# Create override directory for fake-hwclock service
+mkdir -p /etc/systemd/system/fake-hwclock.service.d
 
 # Link random seed to tmpfs location
 cat >> /etc/systemd/system/fake-hwclock.service.d/override.conf << 'EOF'

@@ -51,11 +51,11 @@ echo "Step 7: Disabling unnecessary hardware..."
 echo ""
 sleep 3
 
-# echo ""
-# echo "Step 8: Installing the FRC4607 Spatial AI service..."
-# ./install_frc4607_spatial_ai_service.sh
-# echo ""
-# sleep 3
+echo ""
+echo "Step 8: Installing the FRC4607 Spatial AI service..."
+./install_frc4607_spatial_ai_service.sh
+echo ""
+sleep 3
 
 # echo ""
 # echo "Step 8: Install RO and RW mount scripts..."

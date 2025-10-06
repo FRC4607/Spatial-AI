@@ -176,7 +176,7 @@ if __name__ == "__main__":
 
             # Run spatial inference
             elif spatial_ai_device.command == "inference":
-                streamer.start_streaming(port=5000)
+                streamer.start_streaming(port=5800)
                 with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
                     logger.info("Configuring OAK device for spatial inference")
                     oak_config = OakConfig(oak=oak)
@@ -194,7 +194,7 @@ if __name__ == "__main__":
                         if running_time > spatial_ai_device.inference_time:
                             break
                         oak.poll()
-                #streamer.stop_streaming()
+                streamer.stop_streaming()
             else:
                 time.sleep(1)
 

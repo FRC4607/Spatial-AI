@@ -64,7 +64,7 @@ class SpatialInference():
                 cv2.putText(frame, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                 cv2.putText(frame, f"FPS {self._fps_tracker.get_fps():.1f}", (5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                 break
-            streamer.update_stream(frame)
+        streamer.update_stream(frame)
 
     def start(self, model_path: str, resolution: str):
         """
@@ -74,7 +74,7 @@ class SpatialInference():
             model_path (str): Path to the inference model
             resolution (str): Camera resolution
         """
-        streamer.start_streaming(port=5000)
+        streamer.start_streaming(port=5800)
         with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
             oak_config = OakConfig(oak=oak)
             oak_config.color_camera(resolution=resolution)
@@ -83,11 +83,14 @@ class SpatialInference():
 
             # Startup the pipeline and record until time expires
             print("------------------------------------------------")
-            print("  Starting the OAK pipeline (press q to quit)....")
-            oak.start(blocking=True)
+            print("  Starting the OAK pipeline (press CTRL+C to quit)....")
+            oak.start()
+            while oak.running():
+                oak.poll()
+                time.sleep(0.1)
             print("  Stopping the OAK pipline...")
             print("------------------------------------------------")
-        #streamer.stop_streaming()
+        streamer.stop_streaming()
 
 
 def main():

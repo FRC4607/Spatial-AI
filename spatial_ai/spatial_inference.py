@@ -74,7 +74,7 @@ class SpatialInference():
             model_path (str): Path to the inference model
             resolution (str): Camera resolution
         """
-        streamer.start_streaming(port=5000)
+        streamer.start_streaming(port=5800)
         with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
             oak_config = OakConfig(oak=oak)
             oak_config.color_camera(resolution=resolution)
@@ -87,6 +87,7 @@ class SpatialInference():
             oak.start(blocking=True)
             print("  Stopping the OAK pipline...")
             print("------------------------------------------------")
+        streamer.stop_streaming()
 
 
 def main():

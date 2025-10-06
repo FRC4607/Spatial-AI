@@ -8,7 +8,7 @@ This system supports two primary modes: **Development** and **Competition**.
 
 🔧 Development Mode
 
-- SSH into the Raspberry Pi (frc4607@frc4607-spatial-ai) and run `spatial-inference` to view the stream at http://localhost:5000/
+- SSH into the Raspberry Pi (frc4607@frc4607-spatial-ai) and run `spatial-inference` to view the stream at http://localhost:5800/
 - Or run `recorder` to capture video and save it to an attached USB drive for later playback
 - The FRC4607 Spatial AI service (connects to NT4 using host frc4607-spatial-ai) can also be used view spatial inferencing and recording via NT control
 

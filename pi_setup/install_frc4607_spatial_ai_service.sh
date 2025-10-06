@@ -4,6 +4,13 @@ set -e
 set -u
 set -o pipefail
 
+# Check if running as root, if not, re-run with sudo
+if [[ $EUID -ne 0 ]]; then
+   echo "Re-running with sudo..."
+   sudo "$0" "$@"
+   exit $?
+fi
+
 SERVICE_FILE="/etc/systemd/system/frc4607-spatial-ai.service"
 WORKING_DIR="/home/frc4607/Spatial-AI"
 VENV_PATH="$WORKING_DIR/venv"

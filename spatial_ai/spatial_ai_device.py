@@ -68,7 +68,7 @@ class SpatialAiDevice():
         self._spatial_x_pub.setDefault(0.0)
         self._spatial_y_pub.setDefault(0.0)
         self._spatial_z_pub.setDefault(0.0)
-        self._command_sub = self._spatial_ai_tbl.getStringTopic("command").subscribe("inference")
+        self._command_sub = self._spatial_ai_tbl.getStringTopic("command").subscribe("none")
         self._inference_model_path_sub = self._spatial_ai_tbl.getStringTopic("inference_model").subscribe("./models/2025/07-25_15-28-56/yolov5n.json")
         self._inference_time_sub = self._spatial_ai_tbl.getIntegerTopic("inference_time").subscribe(60)
         self._record_path_sub = self._spatial_ai_tbl.getStringTopic("record_path").subscribe("/media/RECORDINGS/dev")
@@ -176,14 +176,13 @@ if __name__ == "__main__":
 
             # Run spatial inference
             elif spatial_ai_device.command == "inference":
-                streamer.start_streaming(port=5000)
+                streamer.start_streaming(port=5800)
                 with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
                     logger.info("Configuring OAK device for spatial inference")
                     oak_config = OakConfig(oak=oak)
                     oak_config.color_camera(resolution="med")
                     oak_config.inference(model_path=spatial_ai_device.inference_model_path)
                     oak_config.detections_callback(callback=spatial_ai_device.nn_detection_callback)
-
                     oak.start()
                     start_time = time.monotonic()  # pylint: disable=C0103
                     last_print_time = 5  # pylint: disable=C0103
@@ -191,10 +190,11 @@ if __name__ == "__main__":
                         running_time = time.monotonic() - start_time
                         if running_time > last_print_time:
                             last_print_time+=5
-                            print(f"  Running time: {running_time}:.1f")
+                            print(f"  Running time: {running_time:.1f}")
                         if running_time > spatial_ai_device.inference_time:
                             break
                         oak.poll()
+                streamer.stop_streaming()
             else:
                 time.sleep(1)
 

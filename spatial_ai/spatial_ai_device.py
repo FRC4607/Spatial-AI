@@ -47,7 +47,7 @@ class SpatialAiDevice():
 
         # Get the mode and host from the local device environment
         self._mode = os.getenv("SPATIAL_AI_MODE", "dev")
-        self._host = os.getenv("SPATIAL_AI_HOST", "frc4607-spatial-ai")
+        self._host = os.getenv("SPATIAL_AI_HOST", "host-spatial-ai")  # this is the name of the dev laptop
         self._logger.info("SPATIAL_AI_MODE %s, SPATIAL_AI_HOST %s", self._mode, self._host)
 
         # NT connection
@@ -57,8 +57,8 @@ class SpatialAiDevice():
             team=4607,
             port=ntcore.NetworkTableInstance.kDefaultPort4
         )
+        self._logger.info("Waiting for NT4 connection...")
         while not self._nt.isConnected():
-            self._logger.info("Waiting for NT4 connection...")
             time.sleep(1)
         self._logger.info("Connected to NT4!")
         self._spatial_ai_tbl = self._nt.getTable("frc4607-spatial-ai")

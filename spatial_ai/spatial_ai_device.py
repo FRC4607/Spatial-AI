@@ -50,11 +50,21 @@ class SpatialAiDevice():
         self._host = os.getenv("SPATIAL_AI_HOST", "frc4607-spatial-ai")
         self._logger.info("SPATIAL_AI_MODE %s, SPATIAL_AI_HOST %s", self._mode, self._host)
 
-        # NT connection and pubs
+        # NT connection
         self._nt = ntcore.NetworkTableInstance.getDefault()
-        self._nt.startClient4(identity="spatial-ai-dev")
+        self._nt.startClient4(identity="frc4607-spatial-ai")
+        self._nt.setServerTeam(
+            team=4607,
+            port=ntcore.NetworkTableInstance.kDefaultPort4
+        )
+        while not self._nt.isConnected():
+            self._logger.info("Waiting for NT4 connection...")
+            time.sleep(1)
+        self._logger.info("Connected to NT4!")
         self._spatial_ai_tbl = self._nt.getTable("frc4607-spatial-ai")
         self._logger.info("Using table %s", self._spatial_ai_tbl.__str__())
+
+        # NT connection and pubs
         self._fps_pub = self._spatial_ai_tbl.getDoubleTopic("FPS").publish()
         self._fps_pub.setDefault(0.0)
         self._detection_pub = self._spatial_ai_tbl.getBooleanTopic("detection").publish()
@@ -74,21 +84,21 @@ class SpatialAiDevice():
         self._record_sub = self._spatial_ai_tbl.getBooleanTopic("record").subscribe(False)
         self._inference_sub = self._spatial_ai_tbl.getBooleanTopic("inference").subscribe(False)
 
-        # Development mode
-        if self._mode == "dev":
-            self._nt.setServer(
-                server_name=self._host,
-                port=ntcore.NetworkTableInstance.kDefaultPort4
-            )
+        # # Development mode
+        # if self._mode == "dev":
+        #     self._nt.setServer(
+        #         server_name=self._host,
+        #         port=ntcore.NetworkTableInstance.kDefaultPort4
+        #     )
 
-        # Competition mode
-        elif self._mode == "comp":
-            self._nt.setServerTeam(
-                team=4607,
-                port=ntcore.NetworkTableInstance.kDefaultPort4
-            )
-        else:
-            raise RuntimeError(f"Unknown mode {self._mode}")
+        # # Competition mode
+        # elif self._mode == "comp":
+        #     self._nt.setServerTeam(
+        #         team=4607,
+        #         port=ntcore.NetworkTableInstance.kDefaultPort4
+        #     )
+        # else:
+        #     raise RuntimeError(f"Unknown mode {self._mode}")
 
         # Lazy-loaded attributes
         self.record: bool = None  # type: ignore

@@ -13,10 +13,10 @@ class SpatialAiHost():
         self.spatial_ai_tbl = self.nt.getTable("frc4607-spatial-ai")
 
         # NT connection and pubs
-        self.command_pub = self.spatial_ai_tbl.getBooleanTopic("record").publish()
-        self.command_pub.setDefault(False)
-        self.command_pub = self.spatial_ai_tbl.getBooleanTopic("inference").publish()
-        self.command_pub.setDefault(False)
+        self.record_pub = self.spatial_ai_tbl.getBooleanTopic("record").publish()
+        self.record_pub.setDefault(False)
+        self.inference_pub = self.spatial_ai_tbl.getBooleanTopic("inference").publish()
+        self.inference_pub.setDefault(False)
 
         # NT connection and subs
         self.fps_sub = self.spatial_ai_tbl.getDoubleTopic("FPS").subscribe(0.0)

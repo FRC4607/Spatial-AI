@@ -9,7 +9,6 @@ from depthai import UsbSpeed
 from depthai_sdk import OakCamera
 from depthai_sdk.classes import DetectionPacket
 from spatial_ai.oak_config import OakConfig
-from spatial_ai.recorder import Recorder
 from spatial_ai import streamer
 
 
@@ -48,13 +47,13 @@ class SpatialAiDevice():
 
         # Get the mode and host from the local device environment
         self._mode = os.getenv("SPATIAL_AI_MODE", "dev")
-        self._host = os.getenv("SPATIAL_AI_HOST", "host-spatial-ai")
+        self._host = os.getenv("SPATIAL_AI_HOST", "frc4607-spatial-ai")
         self._logger.info("SPATIAL_AI_MODE %s, SPATIAL_AI_HOST %s", self._mode, self._host)
 
-        # Setup NT connection and pubs/subs
+        # NT connection and pubs
         self._nt = ntcore.NetworkTableInstance.getDefault()
         self._nt.startClient4(identity="spatial-ai-dev")
-        self._spatial_ai_tbl = self._nt.getTable("spatial-ai")
+        self._spatial_ai_tbl = self._nt.getTable("frc4607-spatial-ai")
         self._logger.info("Using table %s", self._spatial_ai_tbl.__str__())
         self._fps_pub = self._spatial_ai_tbl.getDoubleTopic("FPS").publish()
         self._fps_pub.setDefault(0.0)
@@ -68,11 +67,12 @@ class SpatialAiDevice():
         self._spatial_x_pub.setDefault(0.0)
         self._spatial_y_pub.setDefault(0.0)
         self._spatial_z_pub.setDefault(0.0)
-        self._command_sub = self._spatial_ai_tbl.getStringTopic("command").subscribe("none")
-        self._inference_model_path_sub = self._spatial_ai_tbl.getStringTopic("inference_model").subscribe("./models/2025/07-25_15-28-56/yolov5n.json")
-        self._inference_time_sub = self._spatial_ai_tbl.getIntegerTopic("inference_time").subscribe(60)
-        self._record_path_sub = self._spatial_ai_tbl.getStringTopic("record_path").subscribe("/media/RECORDINGS/dev")
-        self._record_time_sub = self._spatial_ai_tbl.getIntegerTopic("record_time").subscribe(15)
+        self.status_pub = self._spatial_ai_tbl.getStringTopic("status").publish()
+        self.status_pub.setDefault("idle")
+
+        # NT connection and subs
+        self._record_sub = self._spatial_ai_tbl.getBooleanTopic("record").subscribe(False)
+        self._inference_sub = self._spatial_ai_tbl.getBooleanTopic("inference").subscribe(False)
 
         # Development mode
         if self._mode == "dev":
@@ -91,23 +91,16 @@ class SpatialAiDevice():
             raise RuntimeError(f"Unknown mode {self._mode}")
 
         # Lazy-loaded attributes
-        self.labels: list[str] = None  # type: ignore
-        self.command: str = None  # type: ignore
-        self.inference_model_path: str = None  # type: ignore
-        self.inference_time: int = None  # type: ignore
-        self.record_time: int = None  # type: ignore
-        self.record_path: str = None  # type: ignore
+        self.record: bool = None  # type: ignore
+        self.inference: bool = None  # type: ignore
 
     def update(self):
         """
         Update the sub topics
         """
         if self._mode == "dev":
-            self.command = self._command_sub.get()
-            self.inference_model_path = self._inference_model_path_sub.get()
-            self.inference_time = self._inference_time_sub.get()
-            self.record_time = self._record_time_sub.get()
-            self.record_path = self._record_path_sub.get()
+            self.record = self._record_sub.get()
+            self.inference = self._inference_sub.get()
 
     def is_in_dev_mode(self):
         """Return true if in development mode."""
@@ -162,38 +155,43 @@ if __name__ == "__main__":
     # Run the service in development mode
     if spatial_ai_device.is_in_dev_mode():
         while True:
+            spatial_ai_device.status_pub.set("idle")
             spatial_ai_device.update()
 
             # Make a recording
-            if spatial_ai_device.command == "record":
-                logger.info("Configuring OAK device for recording")
-                Recorder().start(
-                    save_path=spatial_ai_device.record_path,
-                    rec_len_s=spatial_ai_device.record_time,
-                    resolution="med"
-                )
-                logger.info("Recording saved to %s", spatial_ai_device.record_path)
+            if spatial_ai_device.record:
+                with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
+                    logger.info("Configuring OAK device for recording")
+                    oak_config = OakConfig(oak=oak)
+                    oak_config.color_camera(resolution="med")
+                    oak_config.recording(save_path="/media/RECORDINGS/dev")
+                    oak.start()
+                    spatial_ai_device.status_pub.set("recording")
+                    while oak.running():
+                        spatial_ai_device.update()
+
+                        if not spatial_ai_device.record:
+                            break
+                        oak.poll()
+                        time.sleep(1)
 
             # Run spatial inference
-            elif spatial_ai_device.command == "inference":
+            elif spatial_ai_device.inference:
                 streamer.start_streaming(port=5800)
                 with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
                     logger.info("Configuring OAK device for spatial inference")
                     oak_config = OakConfig(oak=oak)
                     oak_config.color_camera(resolution="med")
-                    oak_config.inference(model_path=spatial_ai_device.inference_model_path)
+                    oak_config.inference(model_path="./models/2025/07-25_15-28-56/yolov5n.json")
                     oak_config.detections_callback(callback=spatial_ai_device.nn_detection_callback)
                     oak.start()
-                    start_time = time.monotonic()  # pylint: disable=C0103
-                    last_print_time = 5  # pylint: disable=C0103
+                    spatial_ai_device.status_pub.set("inference")
                     while oak.running():
-                        running_time = time.monotonic() - start_time
-                        if running_time > last_print_time:
-                            last_print_time+=5
-                            print(f"  Running time: {running_time:.1f}")
-                        if running_time > spatial_ai_device.inference_time:
+                        spatial_ai_device.update()
+                        if not spatial_ai_device.inference:
                             break
                         oak.poll()
+                        time.sleep(1)
                 streamer.stop_streaming()
             else:
                 time.sleep(1)

@@ -53,10 +53,18 @@ class SpatialAiDevice():
         # NT connection
         self._nt = ntcore.NetworkTableInstance.getDefault()
         self._nt.startClient4(identity="frc4607-spatial-ai")
-        self._nt.setServerTeam(
-            team=4607,
-            port=ntcore.NetworkTableInstance.kDefaultPort4
-        )
+        if self._mode == "dev":
+            self._nt.setServer(
+                server_name=self._host,
+                port=ntcore.NetworkTableInstance.kDefaultPort4
+            )
+        elif self._mode == "comp":
+            self._nt.setServerTeam(
+                team=4607,
+                port=ntcore.NetworkTableInstance.kDefaultPort4
+            )
+        else:
+            raise RuntimeError(f"Unknown mode {self._mode}")
         self._logger.info("Waiting for NT4 connection...")
         while not self._nt.isConnected():
             time.sleep(1)
@@ -83,22 +91,6 @@ class SpatialAiDevice():
         # NT connection and subs
         self._record_sub = self._spatial_ai_tbl.getBooleanTopic("record").subscribe(False)
         self._inference_sub = self._spatial_ai_tbl.getBooleanTopic("inference").subscribe(False)
-
-        # # Development mode
-        # if self._mode == "dev":
-        #     self._nt.setServer(
-        #         server_name=self._host,
-        #         port=ntcore.NetworkTableInstance.kDefaultPort4
-        #     )
-
-        # # Competition mode
-        # elif self._mode == "comp":
-        #     self._nt.setServerTeam(
-        #         team=4607,
-        #         port=ntcore.NetworkTableInstance.kDefaultPort4
-        #     )
-        # else:
-        #     raise RuntimeError(f"Unknown mode {self._mode}")
 
         # Lazy-loaded attributes
         self.record: bool = None  # type: ignore

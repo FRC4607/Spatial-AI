@@ -155,56 +155,56 @@ if __name__ == "__main__":
     spatial_ai_device = SpatialAiDevice(log=logger)
 
     # Run the service in development mode
-    if spatial_ai_device.is_in_dev_mode():
-        while True:
-            spatial_ai_device.status_pub.set("idle")
-            spatial_ai_device.update()
+    # if spatial_ai_device.is_in_dev_mode():
+    while True:
+        spatial_ai_device.status_pub.set("idle")
+        spatial_ai_device.update()
 
-            # Make a recording
-            if spatial_ai_device.record:
-                with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
-                    logger.info("Configuring OAK device for recording")
-                    oak_config = OakConfig(oak=oak)
-                    oak_config.color_camera(resolution="med")
-                    oak_config.recording(save_path="/media/RECORDINGS/dev")
-                    oak.start()
-                    spatial_ai_device.status_pub.set("recording")
-                    while oak.running():
-                        spatial_ai_device.update()
+        # Make a recording
+        if spatial_ai_device.record:
+            with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
+                logger.info("Configuring OAK device for recording")
+                oak_config = OakConfig(oak=oak)
+                oak_config.color_camera(resolution="med")
+                oak_config.recording(save_path="/media/RECORDINGS/dev")
+                oak.start()
+                spatial_ai_device.status_pub.set("recording")
+                while oak.running():
+                    spatial_ai_device.update()
 
-                        if not spatial_ai_device.record:
-                            break
-                        oak.poll()
-                        time.sleep(1)
+                    if not spatial_ai_device.record:
+                        break
+                    oak.poll()
+                    time.sleep(1)
 
-            # Run spatial inference
-            elif spatial_ai_device.inference:
-                streamer.start_streaming(port=5800)
-                with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
-                    logger.info("Configuring OAK device for spatial inference")
-                    oak_config = OakConfig(oak=oak)
-                    oak_config.color_camera(resolution="med")
-                    oak_config.inference(model_path="./models/2025/07-25_15-28-56/yolov5n.json")
-                    oak_config.detections_callback(callback=spatial_ai_device.nn_detection_callback)
-                    oak.start()
-                    spatial_ai_device.status_pub.set("inference")
-                    while oak.running():
-                        spatial_ai_device.update()
-                        if not spatial_ai_device.inference:
-                            break
-                        oak.poll()
-                        time.sleep(1)
-                streamer.stop_streaming()
-            else:
-                time.sleep(1)
+        # Run spatial inference
+        elif spatial_ai_device.inference:
+            streamer.start_streaming(port=5800)
+            with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
+                logger.info("Configuring OAK device for spatial inference")
+                oak_config = OakConfig(oak=oak)
+                oak_config.color_camera(resolution="med")
+                oak_config.inference(model_path="./models/2025/07-25_15-28-56/yolov5n.json")
+                oak_config.detections_callback(callback=spatial_ai_device.nn_detection_callback)
+                oak.start()
+                spatial_ai_device.status_pub.set("inference")
+                while oak.running():
+                    spatial_ai_device.update()
+                    if not spatial_ai_device.inference:
+                        break
+                    oak.poll()
+                    time.sleep(1)
+            streamer.stop_streaming()
+        else:
+            time.sleep(1)
 
-    # Run the service in competition mode
-    else:
-        with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
-            logger.info("Configuring OAK device for spatial inference")
-            oak_config = OakConfig(oak=oak)
-            oak_config.color_camera(resolution="med")
-            oak_config.inference(model_path="./models/2025/07-25_15-28-56/yolov5n.json")
-            oak_config.detections_callback(callback=spatial_ai_device.nn_detection_callback)
-            logger.info("Comp Mode: start publishing detctions")
-            oak.start(blocking=True)
+    # # Run the service in competition mode
+    # else:
+    #     with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
+    #         logger.info("Configuring OAK device for spatial inference")
+    #         oak_config = OakConfig(oak=oak)
+    #         oak_config.color_camera(resolution="med")
+    #         oak_config.inference(model_path="./models/2025/07-25_15-28-56/yolov5n.json")
+    #         oak_config.detections_callback(callback=spatial_ai_device.nn_detection_callback)
+    #         logger.info("Comp Mode: start publishing detctions")
+    #         oak.start(blocking=True)

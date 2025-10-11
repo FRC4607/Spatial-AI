@@ -31,25 +31,41 @@ MOUNT_POINT="/media/\$LABEL"
 
 mkdir -p "\$MOUNT_POINT"
 
-# Default mount options to allow global write access
-MOUNT_OPTS="defaults,noatime,umask=000"
-
-# Adjust mount options for specific filesystems
-if [[ "\$FSTYPE" == "vfat" || "\$FSTYPE" == "exfat" || "\$FSTYPE" == "ntfs" ]]; then
-    MOUNT_OPTS="defaults,noatime,umask=000,uid=$FRC_UID,gid=$FRC_GID"
+# Mount options based on filesystem type
+if [[ "\$FSTYPE" == "vfat" ]]; then
+    # FAT32 - use dmask and fmask for full permissions
+    MOUNT_OPTS="rw,noatime,uid=$FRC_UID,gid=$FRC_GID,dmask=0000,fmask=0000"
+elif [[ "\$FSTYPE" == "exfat" ]]; then
+    # exFAT
+    MOUNT_OPTS="rw,noatime,uid=$FRC_UID,gid=$FRC_GID,umask=0000"
+elif [[ "\$FSTYPE" == "ntfs" ]]; then
+    # NTFS
+    MOUNT_OPTS="rw,noatime,uid=$FRC_UID,gid=$FRC_GID,umask=0000"
+elif [[ "\$FSTYPE" == "ext4" || "\$FSTYPE" == "ext3" || "\$FSTYPE" == "ext2" ]]; then
+    # ext filesystems
+    MOUNT_OPTS="rw,noatime"
+else
+    # Default for unknown filesystems
+    MOUNT_OPTS="rw,noatime"
 fi
 
+# Attempt to mount
 /bin/mount -t "\$FSTYPE" -o "\$MOUNT_OPTS" "\$DEVICE" "\$MOUNT_POINT" 2>/dev/null
 
 if /bin/mount | /bin/grep -q "\$MOUNT_POINT"; then
-    # Set ownership for ext4 and other filesystems
+    # For ext filesystems, set ownership after mount
     if [[ "\$FSTYPE" == "ext4" || "\$FSTYPE" == "ext3" || "\$FSTYPE" == "ext2" ]]; then
         chown -R $FRC_UID:$FRC_GID "\$MOUNT_POINT"
-        chmod -R 775 "\$MOUNT_POINT"
+        chmod -R 777 "\$MOUNT_POINT"
     fi
-    # Also set ownership of the mount point directory itself (for all filesystem types)
+    
+    # Ensure mount point directory itself has correct ownership
     chown $FRC_UID:$FRC_GID "\$MOUNT_POINT"
-    /bin/logger "USB \$DEVICE mounted at \$MOUNT_POINT with write access for frc4607 user"
+    
+    /bin/logger "USB \$DEVICE (\$FSTYPE) mounted at \$MOUNT_POINT with full write access for frc4607"
+    
+    # Verify permissions (for debugging)
+    /bin/logger "Mount point permissions: \$(stat -c '%a %U:%G' "\$MOUNT_POINT")"
 else
     /bin/logger "Failed to mount \$DEVICE"
     rmdir "\$MOUNT_POINT" 2>/dev/null
@@ -104,12 +120,14 @@ sudo mkdir -p /media
 
 echo ""
 echo "Configuration complete!"
-echo "  FAT/exFAT/NTFS: uid=$FRC_UID, gid=$FRC_GID, umask=000"
-echo "  EXT4/EXT3/EXT2: ownership set after mount"
+echo "  User: frc4607 (UID=$FRC_UID, GID=$FRC_GID)"
+echo "  FAT32: dmask=0000, fmask=0000 (full permissions)"
+echo "  exFAT/NTFS: umask=0000"
+echo "  EXT4: chmod 777 after mount"
 echo ""
-echo "USB drives will auto-mount under /media/<LABEL> with write access for frc4607 user."
+echo "USB drives will auto-mount under /media/<LABEL>"
 echo ""
-echo "To apply changes to currently mounted USB:"
-echo "  1. Unplug USB drive"
-echo "  2. Plug it back in"
-echo "  Or run: sudo umount /media/RECORDINGS && sudo /usr/local/bin/usb-mount.sh /dev/sda1"
+echo "To test with current USB:"
+echo "  sudo umount /media/RECORDINGS"
+echo "  sudo /usr/local/bin/usb-mount.sh /dev/sda1"
+echo "  ls -la /media/RECORDINGS"

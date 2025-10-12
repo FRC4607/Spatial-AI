@@ -9,7 +9,7 @@ from depthai import UsbSpeed
 from depthai_sdk import OakCamera
 from depthai_sdk.classes import DetectionPacket
 from spatial_ai.oak_config import OakConfig
-from spatial_ai import streamer
+from spatial_ai import flask_streamer
 
 
 class FPSTracker:
@@ -146,7 +146,7 @@ class SpatialAiDevice():
                 cv2.putText(frame, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                 cv2.putText(frame, f"FPS {self._fps_tracker.get_fps():.1f}", (5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                 break
-            streamer.update_stream(frame)
+            flask_streamer.update_stream(frame)
 
 
 if __name__ == "__main__":
@@ -179,7 +179,7 @@ if __name__ == "__main__":
 
         # Run spatial inference
         elif spatial_ai_device.inference:
-            streamer.start_streaming(port=5800)
+            flask_streamer.start_streaming(port=5800)
             with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
                 logger.info("Configuring OAK device for spatial inference")
                 oak_config = OakConfig(oak=oak)
@@ -194,7 +194,7 @@ if __name__ == "__main__":
                         break
                     oak.poll()
                     time.sleep(1)
-            streamer.stop_streaming()
+            flask_streamer.stop_streaming()
         else:
             time.sleep(1)
 

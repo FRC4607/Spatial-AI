@@ -80,7 +80,7 @@ def video():
             logger.info("Client disconnected from video stream")
         except Exception as e:  # pylint: disable=W0718
             logger.error("Stream error: %s", e)
-    
+
     return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/health')
@@ -98,7 +98,7 @@ def start_streaming(port=5800, host='0.0.0.0'):
             app.run(host=host, port=port, debug=False, use_reloader=False, threaded=True)
         except Exception as e:  # pylint: disable=W0718
             logger.error("Failed to start stream server: %s", e)
-    
+
     thread = threading.Thread(target=run_server, daemon=True)
     thread.start()
     logger.info("Stream available at: http://localhost:%s", port)

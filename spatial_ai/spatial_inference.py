@@ -7,7 +7,8 @@ from depthai import UsbSpeed
 from depthai_sdk import OakCamera
 from depthai_sdk.classes import DetectionPacket
 from spatial_ai.oak_config import OakConfig
-from spatial_ai import streamer
+#from spatial_ai import flask_streamer
+from spatial_ai.cscore_streamer import CSCoreStreamer
 
 
 class FPSTracker:
@@ -38,9 +39,20 @@ class SpatialInference():
     
     Attributes:
     """
-    def __init__(self):
+    def __init__(self, resolution: str):
+        self._resolution = resolution
+        if resolution == "low":
+            self._width = 640
+            self._height = 360
+        elif resolution == "med":
+            self._width = 768
+            self._height = 432
+        elif resolution == "high":
+            self._width = 1280
+            self._height = 720
         self._oak_config = None
         self._fps_tracker = FPSTracker()
+        self._cs_streamer = CSCoreStreamer(width=self._width, height=self._height)
 
     def _nn_detection_callback(self, packet: DetectionPacket):
         """Process callback."""
@@ -64,20 +76,21 @@ class SpatialInference():
                 cv2.putText(frame, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                 cv2.putText(frame, f"FPS {self._fps_tracker.get_fps():.1f}", (5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                 break
-        streamer.update_stream(frame)
+        self._cs_streamer.add_frame(frame)
+        #flask_streamer.update_stream(frame)
 
-    def start(self, model_path: str, resolution: str):
+    def start(self, model_path: str):
         """
         Start running live spatial inference.
 
         Args:
-            model_path (str): Path to the inference model
+            model_path (str): Path to the in-ference model
             resolution (str): Camera resolution
         """
-        streamer.start_streaming(port=5800)
+        #flask_streamer.start_streaming(port=5800)
         with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
             oak_config = OakConfig(oak=oak)
-            oak_config.color_camera(resolution=resolution)
+            oak_config.color_camera(resolution=self._resolution)
             oak_config.inference(model_path=model_path)
             oak_config.detections_callback(callback=self._nn_detection_callback)
 
@@ -90,7 +103,7 @@ class SpatialInference():
                 time.sleep(0.1)
             print("  Stopping the OAK pipline...")
             print("------------------------------------------------")
-        streamer.stop_streaming()
+        #flask_streamer.stop_streaming()
 
 
 def main():
@@ -112,7 +125,4 @@ def main():
     print(f"Using model: {args.model_path}")
     print(f"Color camera resolution: {args.resolution}")
 
-    SpatialInference().start(
-        model_path=args.model_path,
-        resolution=args.resolution
-    )
+    SpatialInference(resolution=args.resolution).start(model_path=args.model_path)

@@ -144,7 +144,7 @@ class SpatialAiDevice():
                 cv2.putText(frame, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                 cv2.putText(frame, f"FPS {self._fps_tracker.get_fps():.1f}", (5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                 break
-            self._cs_streamer.add_frame(frame)
+        self._cs_streamer.add_frame(frame)
 
     def run_inference_only(self):
         """Run inference-only until interrupted to record."""

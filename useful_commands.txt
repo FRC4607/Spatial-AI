@@ -1,3 +1,0 @@
-# Fix permissions recursively on the entire USB
-sudo chown -R frc4607:frc4607 /media/RECORDINGS
-sudo chmod -R 775 /media/RECORDINGS

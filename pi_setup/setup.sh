@@ -57,6 +57,12 @@ echo "Step 8: Installing the FRC4607 Spatial AI service..."
 echo ""
 sleep 3
 
+echo ""
+echo "Step 9: Installing command aliases..."
+./add_aliases.sh
+echo ""
+sleep 3
+
 # echo ""
 # echo "Step 8: Install RO and RW mount scripts..."
 # ./install_rw_ro_mount_scripts.sh

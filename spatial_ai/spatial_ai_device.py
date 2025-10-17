@@ -63,7 +63,7 @@ class SpatialAiDevice():
             self._height = 720
         else:
             raise RuntimeError(f"Unknown resolution {self._mode}")
-            
+
         self._cs_streamer = CSCoreStreamer(width=self._width, height=self._height)
         self._fps_tracker = FPSTracker()
 
@@ -72,7 +72,7 @@ class SpatialAiDevice():
         self._nt.startClient4(identity="frc4607-spatial-ai")
         if self._mode == "dev":
             self._nt.setServer(
-                server_name=self._host,
+                server_name=self._host+".local",
                 port=ntcore.NetworkTableInstance.kDefaultPort4
             )
         elif self._mode == "comp":
@@ -189,5 +189,5 @@ if __name__ == "__main__":
         # Run inference-only until a recording is requested
         spatial_ai_device.run_inference_only()
 
-        # Run inference and record until stop recording is requested
-        spatial_ai_device.run_inference_and_record()
+        # # Run inference and record until stop recording is requested
+        # spatial_ai_device.run_inference_and_record()

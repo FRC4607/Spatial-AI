@@ -9,7 +9,7 @@ from depthai import UsbSpeed
 from depthai_sdk import OakCamera
 from depthai_sdk.classes import DetectionPacket
 from spatial_ai.oak_config import OakConfig
-from spatial_ai import flask_streamer
+from spatial_ai.cscore_streamer import CSCoreStreamer
 
 
 class FPSTracker:
@@ -39,16 +39,33 @@ class SpatialAiDevice():
     A spatial AI local device.
     """
     def __init__(self, log: logging.Logger):
-        # Logging
         self._logger = log
 
-        # Tracking FPS
-        self._fps_tracker = FPSTracker()
-
-        # Get the mode and host from the local device environment
+        # Get the environment variables
         self._mode = os.getenv("SPATIAL_AI_MODE", "dev")
         self._host = os.getenv("SPATIAL_AI_HOST", "host-spatial-ai")  # this is the name of the dev laptop
-        self._logger.info("SPATIAL_AI_MODE %s, SPATIAL_AI_HOST %s", self._mode, self._host)
+        self._resolution = os.getenv("RESOLUTION", "med")
+        self._model = os.getenv("MODEL", "./models/2025/07-25_15-28-56/yolov5n.json")
+        self._logger.info("Read the following environment variables:")
+        self._logger.info("  SPATIAL_AI_MODE %s", self._mode)
+        self._logger.info("  SPATIAL_AI_HOST %s", self._host)
+        self._logger.info("  RESOLUTION %s", self._resolution)
+        self._logger.info("  MODEL %s", self._model)
+
+        if self._resolution == "low":
+            self._width = 640
+            self._height = 360
+        elif self._resolution == "med":
+            self._width = 768
+            self._height = 432
+        elif self._resolution == "high":
+            self._width = 1280
+            self._height = 720
+        else:
+            raise RuntimeError(f"Unknown resolution {self._mode}")
+            
+        self._cs_streamer = CSCoreStreamer(width=self._width, height=self._height)
+        self._fps_tracker = FPSTracker()
 
         # NT connection
         self._nt = ntcore.NetworkTableInstance.getDefault()
@@ -72,7 +89,7 @@ class SpatialAiDevice():
         self._spatial_ai_tbl = self._nt.getTable("frc4607-spatial-ai")
         self._logger.info("Using table %s", self._spatial_ai_tbl.__str__())
 
-        # NT connection and pubs
+        # NT pubs
         self._fps_pub = self._spatial_ai_tbl.getDoubleTopic("FPS").publish()
         self._fps_pub.setDefault(0.0)
         self._detection_pub = self._spatial_ai_tbl.getBooleanTopic("detection").publish()
@@ -80,35 +97,16 @@ class SpatialAiDevice():
         self._label_pub = self._spatial_ai_tbl.getStringTopic("label").publish()
         self._label_pub.setDefault("")
         self._spatial_x_pub = self._spatial_ai_tbl.getDoubleTopic("spatial_X").publish()
-        self._spatial_y_pub = self._spatial_ai_tbl.getDoubleTopic("spatial_Y").publish()
-        self._spatial_z_pub = self._spatial_ai_tbl.getDoubleTopic("spatial_Z").publish()
         self._spatial_x_pub.setDefault(0.0)
+        self._spatial_y_pub = self._spatial_ai_tbl.getDoubleTopic("spatial_Y").publish()
         self._spatial_y_pub.setDefault(0.0)
+        self._spatial_z_pub = self._spatial_ai_tbl.getDoubleTopic("spatial_Z").publish()
         self._spatial_z_pub.setDefault(0.0)
-        self.status_pub = self._spatial_ai_tbl.getStringTopic("status").publish()
-        self.status_pub.setDefault("idle")
 
-        # NT connection and subs
+        # NT subs
         self._record_sub = self._spatial_ai_tbl.getBooleanTopic("record").subscribe(False)
-        self._inference_sub = self._spatial_ai_tbl.getBooleanTopic("inference").subscribe(False)
 
-        # Lazy-loaded attributes
-        self.record: bool = None  # type: ignore
-        self.inference: bool = None  # type: ignore
-
-    def update(self):
-        """
-        Update the sub topics
-        """
-        if self._mode == "dev":
-            self.record = self._record_sub.get()
-            self.inference = self._inference_sub.get()
-
-    def is_in_dev_mode(self):
-        """Return true if in development mode."""
-        return self._mode == "dev"
-
-    def nn_detection_callback(self, packet: DetectionPacket):
+    def _nn_detection_callback(self, packet: DetectionPacket):
         """Process callback."""
         if packet.frame is None:
             self._logger.warning("Packet frame is None")
@@ -146,65 +144,50 @@ class SpatialAiDevice():
                 cv2.putText(frame, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                 cv2.putText(frame, f"FPS {self._fps_tracker.get_fps():.1f}", (5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                 break
-            flask_streamer.update_stream(frame)
+            self._cs_streamer.add_frame(frame)
+
+    def run_inference_only(self):
+        """Run inference-only until interrupted to record."""
+        with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
+            self._logger.info("Configuring OAK device for spatial inference only")
+            oak_config = OakConfig(oak=oak)
+            oak_config.color_camera(resolution=self._resolution)
+            oak_config.inference(model_path=self._model)
+            oak_config.detections_callback(callback=self._nn_detection_callback)
+            oak.start()
+            while oak.running():
+                if self._record_sub.get():
+                    break
+                oak.poll()
+                time.sleep(1)
+
+    def run_inference_and_record(self):
+        """Run inference-only until interrupted to stop recording."""
+        with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
+            self._logger.info("Configuring OAK device for spatial inference and recording")
+            oak_config = OakConfig(oak=oak)
+            oak_config.color_camera(resolution=self._resolution)
+            oak_config.inference(model_path=self._model)
+            oak_config.detections_callback(callback=self._nn_detection_callback)
+            oak_config.recording(save_path="/media/RECORDINGS/dev")
+            oak.start()
+            while oak.running():
+                if not self._record_sub.get():
+                    break
+                oak.poll()
+                time.sleep(1)
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger("SpatialAiDevice")
+
+    # Create spatial AI device
     spatial_ai_device = SpatialAiDevice(log=logger)
 
-    # Run the service in development mode
-    # if spatial_ai_device.is_in_dev_mode():
     while True:
-        spatial_ai_device.status_pub.set("idle")
-        spatial_ai_device.update()
+        # Run inference-only until a recording is requested
+        spatial_ai_device.run_inference_only()
 
-        # Make a recording
-        if spatial_ai_device.record:
-            with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
-                logger.info("Configuring OAK device for recording")
-                oak_config = OakConfig(oak=oak)
-                oak_config.color_camera(resolution="med")
-                oak_config.recording(save_path="/media/RECORDINGS/dev")
-                oak.start()
-                spatial_ai_device.status_pub.set("recording")
-                while oak.running():
-                    spatial_ai_device.update()
-
-                    if not spatial_ai_device.record:
-                        break
-                    oak.poll()
-                    time.sleep(1)
-
-        # Run spatial inference
-        elif spatial_ai_device.inference:
-            flask_streamer.start_streaming(port=5800)
-            with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
-                logger.info("Configuring OAK device for spatial inference")
-                oak_config = OakConfig(oak=oak)
-                oak_config.color_camera(resolution="med")
-                oak_config.inference(model_path="./models/2025/07-25_15-28-56/yolov5n.json")
-                oak_config.detections_callback(callback=spatial_ai_device.nn_detection_callback)
-                oak.start()
-                spatial_ai_device.status_pub.set("inference")
-                while oak.running():
-                    spatial_ai_device.update()
-                    if not spatial_ai_device.inference:
-                        break
-                    oak.poll()
-                    time.sleep(1)
-            flask_streamer.stop_streaming()
-        else:
-            time.sleep(1)
-
-    # # Run the service in competition mode
-    # else:
-    #     with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
-    #         logger.info("Configuring OAK device for spatial inference")
-    #         oak_config = OakConfig(oak=oak)
-    #         oak_config.color_camera(resolution="med")
-    #         oak_config.inference(model_path="./models/2025/07-25_15-28-56/yolov5n.json")
-    #         oak_config.detections_callback(callback=spatial_ai_device.nn_detection_callback)
-    #         logger.info("Comp Mode: start publishing detctions")
-    #         oak.start(blocking=True)
+        # Run inference and record until stop recording is requested
+        spatial_ai_device.run_inference_and_record()

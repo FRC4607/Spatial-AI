@@ -7,7 +7,6 @@ from depthai import UsbSpeed
 from depthai_sdk import OakCamera
 from depthai_sdk.classes import DetectionPacket
 from spatial_ai.oak_config import OakConfig
-#from spatial_ai import flask_streamer
 from spatial_ai.cscore_streamer import CSCoreStreamer
 
 
@@ -77,7 +76,6 @@ class SpatialInference():
                 cv2.putText(frame, f"FPS {self._fps_tracker.get_fps():.1f}", (5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                 break
         self._cs_streamer.add_frame(frame)
-        #flask_streamer.update_stream(frame)
 
     def start(self, model_path: str):
         """
@@ -87,7 +85,6 @@ class SpatialInference():
             model_path (str): Path to the in-ference model
             resolution (str): Camera resolution
         """
-        #flask_streamer.start_streaming(port=5800)
         with OakCamera(usb_speed=UsbSpeed.HIGH) as oak:
             oak_config = OakConfig(oak=oak)
             oak_config.color_camera(resolution=self._resolution)
@@ -103,7 +100,6 @@ class SpatialInference():
                 time.sleep(0.1)
             print("  Stopping the OAK pipline...")
             print("------------------------------------------------")
-        #flask_streamer.stop_streaming()
 
 
 def main():

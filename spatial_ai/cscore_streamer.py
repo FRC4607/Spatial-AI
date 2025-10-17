@@ -6,7 +6,7 @@ class CSCoreStreamer():
     """
     CS Core Streamer.
     """
-    def __init__(self, width: int = 768, height: int = 432):
+    def __init__(self, width: int, height: int):
         CameraServer.enableLogging()
         self._stream = CameraServer.putVideo("OAK-D Camera", width, height)
 

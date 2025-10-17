@@ -15,6 +15,9 @@ fi
 cat >> "$BASHRC" << 'EOF'
 
 # FRC4607 Custom Aliases
+# Virtual environment
+alias activate='source ./venv/bin/activate'
+
 # Fix permissions recursively on the entire USB
 alias fixrecordings='sudo chown -R frc4607:frc4607 /media/RECORDINGS && sudo chmod -R 775 /media/RECORDINGS'
 

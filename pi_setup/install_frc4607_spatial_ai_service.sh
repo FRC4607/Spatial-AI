@@ -59,7 +59,7 @@ Group=frc4607
 WorkingDirectory=$WORKING_DIR
 Environment=VIRTUAL_ENV=$VENV_PATH
 Environment=PYTHONPATH=$WORKING_DIR
-ExecStart=$VENV_PATH/bin/python $PYTHON_SCRIPT
+ExecStart=/bin/bash -c "source $VENV_PATH/bin/postactivate && exec $VENV_PATH/bin/python $PYTHON_SCRIPT"
 Restart=always
 RestartSec=10
 StandardOutput=append:$LOG_DIR/frc4607-spatial-ai.log

@@ -15,6 +15,7 @@ class OakConfig():
         color_camera - Configure the OAK color camera
     """
     RES_MAP = {
+        "tiny": (1, 6), # gets implmented as (320x180)
         "low": (1, 3),  # gets implmented as (640x360)
         "med": (2, 5),  # gets implmented as (768x432)
         "high": (2, 3), # gets implmented as (1280x720)

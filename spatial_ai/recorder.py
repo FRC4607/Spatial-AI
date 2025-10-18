@@ -23,6 +23,7 @@ class Recorder():
         the full path to save the recording (NOTE - the label of the USB drive may be
         different than the default RECORDINGS). The input `rec_len_s` defines how long
         to record video in seconds. The `resolution` input can be one of the following:
+            "tiny" - which gets implmented as (320x180)
             "low" - which gets implmented as (640x360)
             "med" - which gets implmented as (768x432)
             "high" - which gets implmented as (1280x720)

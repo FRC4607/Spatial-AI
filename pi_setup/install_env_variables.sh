@@ -9,7 +9,7 @@ POSTACTIVATE="$VENV_PATH/bin/postactivate"
 cat << 'EOF' > "$POSTACTIVATE"
 # === Spatial-AI environment variables ===
 export SPATIAL_AI_MODE="dev"
-export SPATIAL_AI_HOST="frc4607-spatial-ai"
+export SPATIAL_AI_HOST="host-spatial-ai"
 export RESOLUTION="med"
 export MODEL="./models/2025/07-25_15-28-56/yolov5n.json"
 # =======================================

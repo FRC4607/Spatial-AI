@@ -106,8 +106,11 @@ This will provide the following one-liners:
 `deletelogs` Delete Spatial AI service logs
 `copyrecordings` Copy USB recordings
 `fixrecordings` Fix USB recordings permissions (if needed)
-`setcompmode` Set PI environment variable to comp mode
-`setdevmode` Set PI environment variable to comp mode
+`setcompmode` Set PI SPATIAL_AI_MODE env variable to comp mode
+`setdevmode` Set PI SPATIAL_AI_MODE env variable to dev mode
+`setreslow` Set PI RESOLUTION env variable to low
+`setresmed` Set PI RESOLUTION env variable to med
+`setreshigh` Set PI RESOLUTION env variable to high
 
 🔗 [Raspberry Pi Docs](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html)  
 🔗 [Embedded Pi Setup Resource](https://github.com/johnwinans/raspberry-pi-install)

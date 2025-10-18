@@ -20,6 +20,5 @@ pip install -e "${workspace}"
 pip install pre-commit
 
 # Vscode exports
-export PYTHONWARNINGS="ignore::FutureWarning:depthai_sdk.previews"
 export PYTHONPATH=$workspace
 export PYTHONDONTWRITEBYTECODE=1

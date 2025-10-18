@@ -1,5 +1,6 @@
 """Spatial AI local device module."""
-import os
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning, module="depthai_sdk")import os
 import time
 import logging
 from collections import deque

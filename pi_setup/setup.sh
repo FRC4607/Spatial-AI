@@ -28,20 +28,20 @@ echo ""
 sleep 3
 
 echo ""
-echo "Step 4: Installing environment variables..."
-./install_env_variables.sh
-echo ""
-sleep 3
-
-echo ""
-echo "Step 5: Disabling unnecessary services..."
+echo "Step 4: Disabling unnecessary services..."
 ./disable_services.sh
 echo ""
 sleep 3
 
 echo ""
-echo "Step 6: Installing git and cloning repository..."
+echo "Step 5: Installing git and cloning repository..."
 ./install_git_and_clone_repo.sh "$1" "$2" "$3"
+echo ""
+sleep 3
+
+echo ""
+echo "Step 6: Installing environment variables..."
+./install_env_variables.sh
 echo ""
 sleep 3
 

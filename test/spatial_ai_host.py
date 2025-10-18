@@ -1,5 +1,6 @@
 """NT host test module."""
 import time
+import subprocess
 import ntcore
 import cv2
 from cscore import CameraServer
@@ -26,8 +27,12 @@ class SpatialAiHost():
         self.spatial_y_sub = self.spatial_ai_tbl.getDoubleTopic("spatial_Y").subscribe(0.0)
         self.spatial_z_sub = self.spatial_ai_tbl.getDoubleTopic("spatial_Z").subscribe(0.0)
 
-        while True:
-            time.sleep(1)
+        subprocess.run(["powershell", "-Command", "servicestop"], check=True)
+        time.sleep(1)
+        subprocess.run(["powershell", "-Command", "deletelogs"], check=True)
+        time.sleep(1)
+        subprocess.run(["powershell", "-Command", "servicestart"], check=True)
+        subprocess.run(["powershell", "-Command", "followlogs"], check=False)
 
     #     # Open the HTTP stream from Pi
     #     print("Connecting to camera stream...")

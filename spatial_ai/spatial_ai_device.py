@@ -4,6 +4,7 @@ import time
 import logging
 from collections import deque
 import warnings
+warnings.filterwarnings("ignore", category=FutureWarning, module="depthai_sdk")
 import ntcore
 import cv2
 from depthai import UsbSpeed
@@ -11,7 +12,6 @@ from depthai_sdk import OakCamera
 from depthai_sdk.classes import DetectionPacket
 from spatial_ai.oak_config import OakConfig
 from spatial_ai.cscore_streamer import CSCoreStreamer
-warnings.filterwarnings("ignore", category=FutureWarning, module="depthai_sdk")
 
 
 class FPSTracker:
@@ -68,9 +68,6 @@ class SpatialAiDevice():
         elif self._resolution == "high":
             self._width = 1280
             self._height = 720
-        elif self._resolution == "tiny":
-            self._width = 320
-            self._height = 180
         else:
             raise RuntimeError(f"Unknown resolution '{self._resolution}'")
         self._logger.info("Camera Resolution: %dx%d", self._width, self._height)

@@ -102,7 +102,6 @@ function setenv {
 # ===== Convenience wrappers =====
 function setcompmode { setenv "SPATIAL_AI_MODE" "comp" }
 function setdevmode  { setenv "SPATIAL_AI_MODE" "dev" }
-function setrestiny   { setenv "RESOLUTION" "tiny" }
 function setreslow   { setenv "RESOLUTION" "low" }
 function setresmed   { setenv "RESOLUTION" "med" }
 function setreshigh  { setenv "RESOLUTION" "high" }
@@ -112,7 +111,7 @@ Write-Host "Available commands:" -ForegroundColor Cyan
 Write-Host "  servicestatus, servicestart, servicestop, servicerestart" -ForegroundColor White
 Write-Host "  viewlogs, followlogs, deletelogs" -ForegroundColor White
 Write-Host "  fixrecordings, pissh, copyrecordings" -ForegroundColor White
-Write-Host "  setcompmode, setdevmode, setrestiny, setreslow, setresmed, setreshigh" -ForegroundColor White
+Write-Host "  setcompmode, setdevmode, setreslow, setresmed, setreshigh" -ForegroundColor White
 '@
 
 # Ensure profile directory exists

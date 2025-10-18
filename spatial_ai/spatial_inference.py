@@ -49,9 +49,6 @@ class SpatialInference():
         elif resolution == "high":
             self._width = 1280
             self._height = 720
-        elif self._resolution == "tiny":
-            self._width = 320
-            self._height = 180
         else:
             raise RuntimeError(f"Unknown resolution '{self._resolution}'")
         self._oak_config = None

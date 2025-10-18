@@ -1,6 +1,5 @@
 av
 depthai==2.30.0.0
 depthai-sdk==1.15.1
-flask
 pyntcore
 robotpy-cscore

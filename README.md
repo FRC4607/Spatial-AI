@@ -8,9 +8,9 @@ This system supports two primary modes: **Development** and **Competition**.
 
 🔧 Development Mode
 
-- SSH into the Raspberry Pi (frc4607@frc4607-spatial-ai) and run `spatial-inference` to view the stream at http://localhost:5800/
+- The FRC4607 Spatial AI service (connects to NT4 using host host-spatial-ai.local) starts up on boot and can be used view spatial inferencing and recording via NT control
+- Or, stop the FRC4607 Spatial AI service, and SSH into the Raspberry Pi (frc4607@frc4607-spatial-ai) and run `spatial-inference` to view the stream
 - Or run `recorder` to capture video and save it to an attached USB drive for later playback
-- The FRC4607 Spatial AI service (connects to NT4 using host frc4607-spatial-ai) can also be used view spatial inferencing and recording via NT control
 
 🏁 Competition Mode
 
@@ -47,7 +47,8 @@ This project uses the following hardware:
 
 🔗 [**Raspberry Pi 5**](https://www.raspberrypi.com/products/raspberry-pi-5/)  
 - Hosts the OAK-D Lite camera  
-- Runs inference and publishes results to NetworkTables  
+- Runs inference and publishes results to NetworkTables
+- Streams annotated images to CameraServer
 - Captures video streams to a connected USB drive
 
 > ⚠️ More powerful host hardware is supported and may be explored in future implementations.
@@ -60,8 +61,9 @@ These tools are required:
 
 - 🔗 [**Python 3**](https://www.python.org/) – Core runtime environment on the Pi
 - 🔗 [**pyntcore**](https://pypi.org/project/pyntcore/) – NetworkTables client library
+- 🔗 [**robotpy-cscore**](https://pypi.org/project/robotpy-cscore/) – RobotPy bindings for cscore image processing library
 - 🔗 [**DepthAI & SDK**](https://github.com/luxonis/depthai/blob/main/depthai_sdk/README.md) – Interface to the OAK-D camera
-- 🔗 [**Luxonis YOLO Converter**](https://tools.luxonis.com/) – Converts YOLOv5/v8 models to `.blob` format
+- 🔗 [**Luxonis YOLO Converter**](https://tools.luxonis.com/) – YOLOv5/v8 `.blob`converter
 
 ---
 
@@ -73,7 +75,7 @@ These tools are required:
 - SSH enabled
 - Bluetooth, WiFi, and Audio HW disabled
 - Several unused services disabled
-- This project is cloned and the virtual environment is setup
+- Setup this project and virtual environment
 
 ### ⚙️ Steps
 
@@ -90,12 +92,22 @@ These tools are required:
 3. From a command prompt at the projects root, run `setup.bat` to setup the virtual environment
 
 4. From a PowerShell on your PC, run the command below to completely setup the Raspberry PI:
-```.\setup_pi.ps1 -User "you" -Email "you@example.com"```
+```.\setup_pi.ps1 -User "yourname" -Email "yourname@example.com"```
 
-5. Use the commands below to switch between the FRC4607 Spatial AI service modes:
-```powershell .\set_dev_mode.ps1```
-```powershell .\set_comp_mode.ps1```
-
+5. For development and debug, install powershell convenience functions by running the following:
+```.\setup_pi_commands.ps1```
+This will provide the following one-liners:
+`servicestatus` Get FRC4607 Spatial AI service status
+`servicestart` Start Spatial AI service
+`servicestop` Stop Spatial AI service
+`servicerestart` Restart Spatial AI service
+`viewlogs` View Spatial AI service logs (last 1000)
+`followlogs` View Spatial AI service logs (realtime)
+`deletelogs` Delete Spatial AI service logs
+`copyrecordings` Copy USB recordings
+`fixrecordings` Fix USB recordings permissions (if needed)
+`setcompmode` Set PI environment variable to comp mode
+`setdevmode` Set PI environment variable to comp mode
 
 🔗 [Raspberry Pi Docs](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html)  
 🔗 [Embedded Pi Setup Resource](https://github.com/johnwinans/raspberry-pi-install)

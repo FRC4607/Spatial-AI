@@ -5,6 +5,7 @@ import logging
 from collections import deque
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning, module="depthai_sdk")
+# pylint: disable=wrong-import-position
 import ntcore
 import cv2
 from depthai import UsbSpeed
@@ -182,7 +183,7 @@ class SpatialAiDevice():
             self._spatial_z_pub.set(coords.z)
 
             self._logger.debug("Detection: %s at (%.2f, %.2f, %.2f) conf=%.2f",
-                             det.label_str, coords.x, coords.y, coords.z, det.confidence)
+                               det.label_str, coords.x, coords.y, coords.z, det.confidence)
 
             # Draw bounding box
             frame_height, frame_width = frame.shape[:2]

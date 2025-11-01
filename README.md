@@ -1,22 +1,19 @@
 # 🧠 Spatial-AI
 
-The goal of this project is to develop the tools and processes necessary to provide **timely and reliable robot-relative game piece detection** to the robot controller via WPILib NetworkTables.
-
-> Simply put: if the robot stands still for a second, this system will detect game objects ***and where they are*** relative to the robot.
+The goal of this project is to develop the tools and processes necessary to provide **timely and reliable robot-relative game piece detection** to the robot controller via WPILib NetworkTables. This is achieved by using an Oak-D camera and running the FRC4607 SpatialAI service on a Raspberry Pi.
 
 This system supports two primary modes: **Development** and **Competition**.
 
 🔧 Development Mode
 
-- The FRC4607 Spatial AI service (connects to NT4 using host host-spatial-ai.local) starts up on boot and can be used view spatial inferencing and recording via NT control
-- Or, stop the FRC4607 Spatial AI service, and SSH into the Raspberry Pi (frc4607@frc4607-spatial-ai) and run `spatial-inference` to view the stream
-- Or run `recorder` to capture video and save it to an attached USB drive for later playback
+- The FRC4607 Spatial AI service connects to NT4 using `host-spatial-ai.local`, starts up on boot, and can be used view spatial inferencing and recording via NT control
+- Or SSH into the Raspberry Pi using `frc4607@frc4607-spatial-ai`, stop the FRC4607 Spatial AI service, and run `spatial-inference` to view the stream
+- Or while SSH'd into the Raspberry Pi, run `recorder` to capture video and save it to the attached USB drive for later playback
 
 🏁 Competition Mode
 
-- The FRC4607 Spatial AI service will connect to NT4 using team number 4607
-- **Inferencing** is started and during bootup 
-- **Recording** to the attached USB drive is triggered by start/stop signals received from the robot code.
+- The FRC4607 Spatial AI service will connect to NT4 using team number 4607 and **Inferencing** is started during bootup 
+- **Recording** to the attached USB drive is triggered by start/stop signals received from the robot code
 
 🐞 Debugging
 
@@ -33,7 +30,6 @@ This system supports two primary modes: **Development** and **Competition**.
 - [🧹 3. Preparing the Training Images](#-3-preparing-the-training-images)
 - [🧠 4. Training the YOLO Model](#-4-training-the-yolo-model)
 - [🚀 5. Running the YOLO Model](#-5-running-the-yolo-model)
-- [📂 Project Structure](#-project-structure-wip)
 
 ---
 
@@ -51,15 +47,13 @@ This project uses the following hardware:
 - Streams annotated images to CameraServer
 - Captures video streams to a connected USB drive
 
-> ⚠️ More powerful host hardware is supported and may be explored in future implementations.
-
 ---
 
 ## 💻 Software
 
-These tools are required:
+The following software packages and tools are required:
 
-- 🔗 [**Python 3**](https://www.python.org/) – Core runtime environment on the Pi
+- 🔗 [**Python 3**](https://www.python.org/) – Core runtime environment on the Raspberry Pi
 - 🔗 [**pyntcore**](https://pypi.org/project/pyntcore/) – NetworkTables client library
 - 🔗 [**robotpy-cscore**](https://pypi.org/project/robotpy-cscore/) – RobotPy bindings for cscore image processing library
 - 🔗 [**DepthAI & SDK**](https://github.com/luxonis/depthai/blob/main/depthai_sdk/README.md) – Interface to the OAK-D camera
@@ -78,8 +72,9 @@ These tools are required:
 - Setup this project and virtual environment
 
 ### ⚙️ Steps
+The following assumes the setup will be done from a Windows PC.
 
-1. Download and install Raspberry Pi OS Lite using [Raspberry Pi Imager](https://www.raspberrypi.com/documentation/computers/getting-started.html#raspberry-pi-imager)
+1. Download and install Raspberry Pi OS Lite to a micro SD card using [Raspberry Pi Imager](https://www.raspberrypi.com/documentation/computers/getting-started.html#raspberry-pi-imager)
    - In "Edit Settings":
      - **Hostname**: `frc4607-spatial-ai`
      - **Username**: `frc4607`
@@ -104,7 +99,7 @@ This will provide the following one-liners:
 `viewlogs` View Spatial AI service logs (last 1000)
 `followlogs` View Spatial AI service logs (realtime)
 `deletelogs` Delete Spatial AI service logs
-`copyrecordings` Copy USB recordings
+`copyrecordings` Copy USB recordings to local PC
 `fixrecordings` Fix USB recordings permissions (if needed)
 `setcompmode` Set PI SPATIAL_AI_MODE env variable to comp mode
 `setdevmode` Set PI SPATIAL_AI_MODE env variable to dev mode
@@ -121,25 +116,25 @@ This will provide the following one-liners:
 
 ### Best Practices:
 
-- Use the **robot-mounted OAK-D Lite** to capture all data
-- Gather a core dataset on the BRIC field:
-  - Vary lighting, backgrounds, and robot poses
-- Supplement the dataset using curated screenshots from match video
+- Use the **robot-mounted OAK-D Lite** to capture all training data
+- Gather the core dataset at the BRIC field (done prior to regional play):
+  - Vary the lighting, backgrounds, and robot poses
+- Supplement the dataset using curated screenshots from match video gathered throughout the competition season
 
 🎯 **Goal**: Create a focused, high-quality dataset  
-> “Don't try to boil the ocean.”
+> Remember - “Don't try to boil the ocean.”
 
 ---
 
 ## 🧹 3. Preparing the Training Images
 
+The team will use our [Roboflow - FRC4607 Workspace](https://app.roboflow.com/frc4607) to manage the preperation of the training images. 
+
 ### Steps:
 
-1. **Annotate** – Draw bounding boxes and assign class labels  
-2. **Format** – Organize in a YOLO-compatible folder layout
-
-> 📝 Use Roboflow for annotation and export:  
-🔗 [Roboflow - FRC4607 Workspace](https://app.roboflow.com/frc4607)
+1. **Annotate** – Annotating images consists of drawing bounding boxes and assigning class labels [2006-REBUILT Annotation](https://app.roboflow.com/frc4607/2026-rebuilt-d0wrw/annotate)
+2. **Format** – The training images need to be eported in the YOLOv5 model format [2006-REBUILT Versions](https://app.roboflow.com/frc4607/2026-rebuilt-d0wrw/generate/empty)
+![Figure 6](resources/figure6.png)
 
 🔗 [Ultralytics Data Annotation Guide](https://docs.ultralytics.com/guides/data-collection-and-annotation/#introduction)
 
@@ -147,16 +142,12 @@ This will provide the following one-liners:
 
 ## 🧠 4. Training the YOLO Model
 
-We use **[YOLOv5](https://docs.ultralytics.com/yolov5/)** to train models on our dataset. As data grows throughout the season, we continuously retrain.
-
-> ⚠️ YOLOv8 is newer and may be adopted in the future if it improves performance.
-
-Training is done using **Google Colab**, with outputs saved to Google Drive. The GitHub auto-commit feature uses a GitHub token for uploads.
+We use **[YOLOv5](https://docs.ultralytics.com/yolov5/)** to train models on our dataset. As the dataset grows throughout the season, we continuously retrain. Training is done using **Google Colab**, with outputs saved to Google Drive. The GitHub auto-commit feature uses a GitHub token for uploads.
 
 ### 🔐 Setup:
 
-- Create a folder: `Google Colab` at the root of your Google Drive
-- Add a file: `github_token.txt` inside that folder
+- Create a folder named `Google Colab` at the root of the Google Drive
+- Add a file named `github_token.txt` inside that folder (the contents must be the GitHub token)
 
 ### ✅ Colab Training Steps:
 
@@ -186,18 +177,3 @@ Training is done using **Google Colab**, with outputs saved to Google Drive. The
 ## 🚀 5. Running the YOLO Model
 
 🚧 _Coming soon: Real-time inference with DepthAI SDK and NetworkTables messaging._
-
----
-
-## 📂 Project Structure (WIP)
-
-```
-spatial-ai/
-├── models/           # YOLO model blobs (PyTorch, OpenVINO)
-├── notebooks/        # Google Colab training notebooks
-├── pi-setup/         # Raspberry Pi setup scripts and image tools
-├── resources/        # Figures and documentation resources
-├── training_data/    # Annotated YOLO training datasets
-├── src/              # Python code for inference and NetworkTables communication
-└── README.md
-```

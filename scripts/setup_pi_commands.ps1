@@ -8,7 +8,7 @@ Write-Host "=== Raspberry Pi Remote Commands Setup (Overwrite Profile) ===" -For
 
 # ===== Configuration =====
 $PI_USER  = "frc4607"
-$PI_HOST  = "frc4607-spatial-ai"
+$PI_HOST  = "frc4607-spatial-ai.local"
 $PI_FULL  = "$PI_USER@$PI_HOST"
 
 # ===== Step 1: Check if SSH key exists =====
@@ -47,7 +47,7 @@ $PROFILE_CONTENT = @'
 # ========================================
 
 $PI_USER  = 'frc4607'
-$PI_HOST  = 'frc4607-spatial-ai'
+$PI_HOST  = 'frc4607-spatial-ai.local'
 $PI_FULL  = "$PI_USER@$PI_HOST"
 
 # Helper function to run SSH commands safely

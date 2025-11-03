@@ -1,5 +1,8 @@
 """Module for replaying OAK video and running inference."""
 import argparse
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning, module="depthai_sdk")
+# pylint: disable=wrong-import-position
 from depthai_sdk import OakCamera
 from spatial_ai.oak_config import OakConfig
 
@@ -28,7 +31,7 @@ class Replay():
             oak_config.inference(model_path=model_path)
             oak_config.visualize()
 
-            # Startup the pipeline and record until time expires
+            # Startup the pipeline and replay until time expires
             print("------------------------------------------------")
             print("  Starting the OAK pipeline (press q to quit)....")
             oak.start(blocking=True)

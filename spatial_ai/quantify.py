@@ -1,0 +1,141 @@
+"""Module for quantifying recorded video."""
+import argparse
+import os
+import warnings
+import logging
+import time
+os.environ["DEPTHAI_LEVEL"] = "error"
+os.environ["DEPTHAI_LOG_LEVEL"] = "error"
+warnings.filterwarnings("ignore", category=FutureWarning, module="depthai_sdk")
+logging.getLogger("depthai_sdk").setLevel(logging.ERROR)
+logging.getLogger("depthai").setLevel(logging.ERROR)
+# pylint: disable=wrong-import-position
+import cv2
+from depthai_sdk import OakCamera
+from spatial_ai.oak_config import OakConfig
+from tqdm import tqdm
+
+class Quantify():
+    """
+    A class to quantify the inference performance against a recording,
+    and track frames that were not detected.
+    """
+    def __init__(self):
+        self._frames = 0
+        self._detections = 0
+        self._start_time = None
+        self._end_time = None
+        self._last_frame_time = None
+        self._min_latency = float('inf')
+        self._max_latency = 0.0
+        self._total_latency = 0.0
+        self._resolution = None
+        self._total_video_frames = 0
+        self._undetected_folder = None
+        self._pbar = None
+
+    def _nn_detection_callback(self, packet):
+        """Process callback for each frame."""
+        if packet.frame is None:
+            return
+
+        self._frames += 1
+        if self._pbar:
+            self._pbar.update(1)
+        now = time.time()
+
+        if self._start_time is None:
+            self._start_time = now
+            self._last_frame_time = now
+        else:
+            if self._last_frame_time is not None:
+                latency = now - self._last_frame_time
+                self._min_latency = min(self._min_latency, latency)
+                self._max_latency = max(self._max_latency, latency)
+                self._total_latency += latency
+            self._last_frame_time = now
+
+        # Track detections
+        if packet.img_detections.detections:  # type: ignore
+            self._detections += 1
+        else:
+            # No detection in this frame
+            if self._undetected_folder:
+                frame_bgr = cv2.cvtColor(packet.frame, cv2.COLOR_RGB2BGR)
+                filename = os.path.join(self._undetected_folder, f"frame_{self._frames:04d}.png")
+                cv2.imwrite(filename, frame_bgr)
+
+    def start(self, video_path: str, model_path: str):
+        """Start inference and track stats."""
+        # Determine resolution from video
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            raise IOError(f"Cannot open video file: {video_path}")
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        self._total_video_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        cap.release()
+        if width == 640 and height == 360:
+            self._resolution = "low"
+        elif width == 768 and height == 432:
+            self._resolution = "med"
+        elif width == 1280 and height == 720:
+            self._resolution = "high"
+        else:
+            self._resolution = "med"
+            print(f"Warning: video resolution {width}x{height} not standard. Using 'med'.")
+
+        # Determine folder for undetected frames based on video path
+        video_dir = os.path.dirname(video_path)
+        self._undetected_folder = os.path.join(video_dir, "undetected_frames")
+        os.makedirs(self._undetected_folder, exist_ok=True)
+
+        print(f"Total video frames: {self._total_video_frames}")
+        print(f"Video resolution: {width}x{height} -> OAK preset: {self._resolution}")
+
+        # Create a progress bar
+        self._pbar = tqdm(total=self._total_video_frames, desc="Processing frames", ncols=80)
+
+        # Run inference
+        with OakCamera(replay=video_path) as oak:
+            oak_config = OakConfig(oak=oak)
+            oak_config.color_camera(resolution=self._resolution)
+            oak_config.inference(model_path=model_path)
+            oak_config.detections_callback(callback=self._nn_detection_callback)
+            oak.start(blocking=True)
+
+        self._pbar.close()
+
+        # Timing and stats
+        self._end_time = time.time()
+        elapsed = self._end_time - self._start_time if self._start_time else 0
+        effective_fps = self._frames / elapsed if elapsed > 0 else 0.0
+        avg_latency = (self._total_latency / (self._frames - 1)) if self._frames > 1 else 0.0
+        detection_rate = (self._detections / self._frames) * 100 if self._frames > 0 else 0.0
+
+        print(f"\nProcessed {self._frames} frames")
+        print(f"Found {self._detections} detections")
+        print(f"Detection rate: {detection_rate:.2f}%")
+        print(f"Elapsed time: {elapsed:.2f} s")
+        print(f"Effective FPS: {effective_fps:.2f}")
+        print(f"Frame latency: min {self._min_latency*1000:.2f} ms, "
+              f"max {self._max_latency*1000:.2f} ms, "
+              f"avg {avg_latency*1000:.2f} ms")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Spatial AI - Quantify CLI")
+    parser.add_argument(
+        "--video-path",
+        type=str,
+        default="./recordings/test.mp4",
+        help="Path to the input video file (default: ./recordings/test.mp4)"
+    )
+    parser.add_argument(
+        "--model-path",
+        type=str,
+        default="./models/2025/07-25_15-28-56/yolov5n.json",
+        help="Path to the inference model file (default: ./models/2025/07-25_15-28-56/yolov5n.json)"
+    )
+    args = parser.parse_args()
+    Quantify().start(video_path=args.video_path, model_path=args.model_path)

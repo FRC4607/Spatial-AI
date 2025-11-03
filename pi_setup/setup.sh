@@ -10,8 +10,9 @@ if [ "$#" -ne 3 ]; then
 fi
 
 echo ""
-echo "Step 1: Setting up USB automount..."
+echo "Step 1: Setting up USB automount/remount..."
 ./install_automount_usb_recordings.sh
+./install_remount_usb_recordings.sh
 echo ""
 sleep 3
 

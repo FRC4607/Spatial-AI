@@ -156,12 +156,17 @@ class SpatialAiDevice():
         self._frame_counter += 1
         frame = packet.frame.copy()
 
+        # Add FPS overlay
+        fps = self._fps_tracker.get_fps()
+        cv2.putText(frame, f"FPS {fps:.1f}", (5, 20),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+
         # Log periodically to show we're receiving frames
         current_time = time.time()
         if current_time - self._last_log_time >= 30.0:
             self._logger.info("Status: Received %d frames, FPS: %.1f",
                               self._frame_counter,
-                              self._fps_tracker.get_fps())
+                              fps)
             self._last_log_time = current_time
 
         # No detections
@@ -196,11 +201,6 @@ class SpatialAiDevice():
             # Add label text
             label = f"{det.label_str}: {det.confidence:.2f}"
             cv2.putText(frame, label, (x1, y1-10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-
-            # Add FPS overlay
-            fps = self._fps_tracker.get_fps()
-            cv2.putText(frame, f"FPS {fps:.1f}", (5, 20),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
             # Push frame to CameraServer

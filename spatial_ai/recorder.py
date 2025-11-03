@@ -1,6 +1,9 @@
 """Module for recording OAK video to attached USB drive."""
 import argparse
 import time
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning, module="depthai_sdk")
+# pylint: disable=wrong-import-position
 import depthai as dai
 from depthai_sdk import OakCamera
 from spatial_ai.oak_config import OakConfig
@@ -48,7 +51,7 @@ class Recorder():
                 running_time = time.monotonic() - start_time
                 if running_time > last_print_time:
                     last_print_time+=5
-                    print(f"  Running time: {running_time}")
+                    print(f"  Running time: {running_time:.0f}")
                 if running_time > rec_len_s:
                     break
                 oak.poll()

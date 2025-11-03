@@ -135,6 +135,14 @@ The team will use our [Roboflow - FRC4607 Workspace](https://app.roboflow.com/fr
 1. **Annotate** – Annotating images consists of drawing bounding boxes and assigning class labels [2006-REBUILT Annotation](https://app.roboflow.com/frc4607/2026-rebuilt-d0wrw/annotate)
 2. **Format** – The training images need to be eported in the YOLOv5 model format [2006-REBUILT Versions](https://app.roboflow.com/frc4607/2026-rebuilt-d0wrw/generate/empty)
 ![Figure 6](resources/figure6.png)
+3. **Update the ZIP** - Replace the relative folders with absolute ones in `data.yaml`. For example, replace the following:
+`train: ../train/images`
+`val: ../valid/images`
+`test: ../test/images`
+with
+`train: /content/<zip_file_name>/valid/images`
+`val: /content/<zip_file_name>/valid/images`
+`test: /content/<zip_file_name>/valid/images`
 
 🔗 [Ultralytics Data Annotation Guide](https://docs.ultralytics.com/guides/data-collection-and-annotation/#introduction)
 

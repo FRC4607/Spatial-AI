@@ -3,6 +3,7 @@ import argparse
 import os
 import warnings
 import logging
+import shutil
 import time
 os.environ["DEPTHAI_LEVEL"] = "error"
 os.environ["DEPTHAI_LOG_LEVEL"] = "error"
@@ -11,11 +12,12 @@ logging.getLogger("depthai_sdk").setLevel(logging.ERROR)
 logging.getLogger("depthai").setLevel(logging.ERROR)
 # pylint: disable=wrong-import-position
 import cv2
+from tqdm import tqdm
 from depthai_sdk import OakCamera
 from spatial_ai.oak_config import OakConfig
-from tqdm import tqdm
 
-class Quantify():
+
+class Analyze():
     """
     A class to quantify the inference performance against a recording,
     and track frames that were not detected.
@@ -31,6 +33,7 @@ class Quantify():
         self._total_latency = 0.0
         self._resolution = None
         self._total_video_frames = 0
+        self._detected_folder = None
         self._undetected_folder = None
         self._pbar = None
 
@@ -40,7 +43,7 @@ class Quantify():
             return
 
         self._frames += 1
-        if self._pbar:
+        if self._pbar is not None:
             self._pbar.update(1)
         now = time.time()
 
@@ -58,6 +61,22 @@ class Quantify():
         # Track detections
         if packet.img_detections.detections:  # type: ignore
             self._detections += 1
+            frame_bgr = cv2.cvtColor(packet.frame, cv2.COLOR_RGB2BGR)
+            for det in packet.detections:
+                bbox = packet.bbox.get_relative_bbox(det.bbox)
+                # self._logger.debug("Detected %s at (%.2f, %.2f, %.2f)", det.label_str, coords.x, coords.y, coords.z)
+                frame_height, frame_width = packet.frame.shape[:2]
+                x1 = int(bbox.xmin * frame_width)
+                y1 = int(bbox.ymin * frame_height)
+                x2 = int(bbox.xmax * frame_width)
+                y2 = int(bbox.ymax * frame_height)
+                label = f"{det.label_str}: {det.confidence:.2f}"
+                cv2.rectangle(frame_bgr, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv2.putText(frame_bgr, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                break
+            if self._detected_folder:
+                filename = os.path.join(self._detected_folder, f"frame_{self._frames:04d}.png")
+                cv2.imwrite(filename, frame_bgr)
         else:
             # No detection in this frame
             if self._undetected_folder:
@@ -87,14 +106,22 @@ class Quantify():
 
         # Determine folder for undetected frames based on video path
         video_dir = os.path.dirname(video_path)
+        self._detected_folder = os.path.join(video_dir, "detected_frames")
+        if os.path.exists(self._detected_folder):
+            shutil.rmtree(self._detected_folder)
+        os.makedirs(self._detected_folder)
         self._undetected_folder = os.path.join(video_dir, "undetected_frames")
-        os.makedirs(self._undetected_folder, exist_ok=True)
+        if os.path.exists(self._undetected_folder):
+            shutil.rmtree(self._undetected_folder)
+        os.makedirs(self._undetected_folder)
 
-        print(f"Total video frames: {self._total_video_frames}")
-        print(f"Video resolution: {width}x{height} -> OAK preset: {self._resolution}")
+        print(f"\nModel: {model_path}")
+        print(f"Video: {video_path}")
+        print(f"Resolution: {width}x{height} -> OAK preset: {self._resolution}")
+        print(f"Number of Frames: {self._total_video_frames}\n")
 
         # Create a progress bar
-        self._pbar = tqdm(total=self._total_video_frames, desc="Processing frames", ncols=80)
+        self._pbar = tqdm(total=self._total_video_frames, desc="Processing", ncols=80)
 
         # Run inference
         with OakCamera(replay=video_path) as oak:
@@ -116,15 +143,16 @@ class Quantify():
         print(f"\nProcessed {self._frames} frames")
         print(f"Found {self._detections} detections")
         print(f"Detection rate: {detection_rate:.2f}%")
-        print(f"Elapsed time: {elapsed:.2f} s")
+        print(f"Elapsed time: {elapsed:.2f}s")
         print(f"Effective FPS: {effective_fps:.2f}")
         print(f"Frame latency: min {self._min_latency*1000:.2f} ms, "
               f"max {self._max_latency*1000:.2f} ms, "
               f"avg {avg_latency*1000:.2f} ms")
+        print(f"See {self._undetected_folder} for frames without detections")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Spatial AI - Quantify CLI")
+    parser = argparse.ArgumentParser(description="Spatial AI - Analyze CLI")
     parser.add_argument(
         "--video-path",
         type=str,
@@ -138,4 +166,4 @@ if __name__ == "__main__":
         help="Path to the inference model file (default: ./models/2025/07-25_15-28-56/yolov5n.json)"
     )
     args = parser.parse_args()
-    Quantify().start(video_path=args.video_path, model_path=args.model_path)
+    Analyze().start(video_path=args.video_path, model_path=args.model_path)

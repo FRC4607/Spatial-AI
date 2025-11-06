@@ -8,6 +8,7 @@ requires-python = ">=3.11"
 recorder = "spatial_ai.recorder:main" 
 replay = "spatial_ai.replay:main"
 spatial-inference = "spatial_ai.spatial_inference:main"
+analyze = "spatial_ai.analyze:main"
 
 [build-system]
 requires=["hatchling"]

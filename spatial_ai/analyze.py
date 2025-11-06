@@ -150,8 +150,8 @@ class Analyze():
               f"avg {avg_latency*1000:.2f} ms")
         print(f"See {self._undetected_folder} for frames without detections")
 
-
-if __name__ == "__main__":
+def main():
+    """Main function called by CLI."""
     parser = argparse.ArgumentParser(description="Spatial AI - Analyze CLI")
     parser.add_argument(
         "--video-path",
